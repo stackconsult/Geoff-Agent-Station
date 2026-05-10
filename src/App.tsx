@@ -1,19 +1,25 @@
 import { useState, useEffect } from 'react';
-import { Editor } from './components/Editor';
-import { SidebarSections } from './components/SidebarSections';
-import { NoteList } from './components/NoteList';
 import { useAutoGit } from './hooks/useAutoGit';
 import { useVaultLoader } from './hooks/useVaultLoader';
-import { handleImagePaste } from './hooks/useImagePaste';
 import type { AppState, VaultEntry } from './types';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { VaultSelector } from './components/VaultSelector';
 import { ErrorDisplay } from './components/ErrorDisplay';
-import { SearchBar } from './components/SearchBar';
+import { AppLayout, Sidebar, NoteList, Editor, AiPanel, StatusBar } from './components/layout';
 
 const VAULT_PATH_KEY = 'tolaria_vault_path';
 
+/**
+ * Tolaria App - Four-Panel Layout
+ * 
+ * ┌────────┬─────────────┬─────────────────────────┬────────────┐
+ * │Sidebar │ Note List   │ Editor                  │ Right Panel│
+ * │(250px) │ (300px)     │ (flex-1)                │ (280px)    │
+ * ├────────┴─────────────┴─────────────────────────┴────────────┤
+ * │ StatusBar                                                   │
+ * └─────────────────────────────────────────────────────────────┘
+ */
 export default function App() {
   const [state, setState] = useState<AppState>({
     vaultPath: '',
@@ -23,8 +29,8 @@ export default function App() {
     error: null
   });
   
-  const [searchResults, setSearchResults] = useState<VaultEntry[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [aiPanelOpen, setAiPanelOpen] = useState(true);
 
   const DEFAULT_VAULT_PATH = 'C:\\Users\\Geoff Parsons\\Desktop\\tolaria-automation\\vault';
 
@@ -34,7 +40,6 @@ export default function App() {
     if (savedPath) {
       setState(prev => ({ ...prev, vaultPath: savedPath }));
     } else {
-      // Set default vault for this workspace
       localStorage.setItem(VAULT_PATH_KEY, DEFAULT_VAULT_PATH);
       setState(prev => ({ ...prev, vaultPath: DEFAULT_VAULT_PATH }));
     }
@@ -68,44 +73,19 @@ export default function App() {
   useVaultLoader(state.vaultPath);
   useAutoGit(state.vaultPath);
 
+  // Filter notes based on search query
+  const filteredNotes = searchQuery
+    ? state.notes.filter(note => 
+        note.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : state.notes;
+
   const handleVaultSelect = (path: string) => {
     setState(prev => ({ ...prev, vaultPath: path }));
   };
 
-  const handleRevealFile = async () => {
-    if (state.currentNote) {
-      const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('reveal_file', { path: state.currentNote });
-    }
-  };
-
-  const handlePaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const items = event.clipboardData?.items;
-    if (!items) return;
-
-    for (const item of Array.from(items)) {
-      if (item.type.startsWith('image/')) {
-        const file = item.getAsFile();
-        if (file) {
-          const data = await file.arrayBuffer();
-          const filename = file.name;
-          await handleImagePaste(state.vaultPath, filename, new Uint8Array(data));
-        }
-      }
-    }
-  };
-
   const handleNoteSelect = (note: VaultEntry) => {
     setState(prev => ({ ...prev, currentNote: note }));
-  };
-
-  const handleSave = async (path: string, content: string) => {
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('save_note_content', { path, content });
-    } catch (error) {
-      setState(prev => ({ ...prev, error: String(error) }));
-    }
   };
 
   const handleDismissError = () => {
@@ -117,39 +97,85 @@ export default function App() {
     setState({ vaultPath: '', notes: [], currentNote: null, isLoading: false, error: null });
   };
 
+  // Transform notes for NoteList component
+  const noteListItems = filteredNotes.map(note => ({
+    id: note.id,
+    title: note.title,
+    snippet: note.content?.substring(0, 150),
+    modifiedAt: new Date(note.modified || Date.now()).toLocaleDateString(),
+    type: note.type,
+  }));
+
+  // Transform current note for Editor
+  const editorNote = state.currentNote ? {
+    id: state.currentNote.id,
+    title: state.currentNote.title,
+    content: state.currentNote.content || '',
+    path: ['Vault', state.currentNote.title],
+  } : null;
+
+  if (!state.vaultPath) {
+    return (
+      <ErrorBoundary>
+        <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
+          {state.isLoading && <LoadingSpinner />}
+          {state.error && <ErrorDisplay error={state.error} onDismiss={handleDismissError} />}
+          <VaultSelector onVaultSelect={handleVaultSelect} isLoading={state.isLoading} />
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
-      <div className="app">
+      <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
         {state.isLoading && <LoadingSpinner />}
         {state.error && <ErrorDisplay error={state.error} onDismiss={handleDismissError} />}
         
-        {!state.vaultPath ? (
-          <VaultSelector onVaultSelect={handleVaultSelect} isLoading={state.isLoading} />
-        ) : (
-          <div className="integrated-layout">
-            <div className="sidebar">
-              <div className="sidebar-header">
-                <h2>Tolaria</h2>
-                <button onClick={handleChangeVault} className="change-vault-btn" title="Change Vault">↻</button>
-              </div>
-              <SearchBar vaultPath={state.vaultPath} onResults={setSearchResults} />
-              <SidebarSections notes={state.notes} />
-              <NoteList 
-                notes={searchResults.length > 0 ? searchResults : state.notes} 
-                currentNote={state.currentNote} 
-                onNoteSelect={handleNoteSelect} 
-              />
-            </div>
-            <div className="main">
-              <Editor
-                currentNote={state.currentNote}
-                onRevealFile={handleRevealFile}
-                onPaste={handlePaste}
-                onSave={handleSave}
-              />
-            </div>
-          </div>
-        )}
+        <AppLayout
+          sidebar={
+            <Sidebar
+              vaultName={state.vaultPath.split('/').pop() || 'Vault'}
+              currentFilter="all"
+              onFilterChange={(filter) => console.log('Filter:', filter)}
+            />
+          }
+          noteList={
+            <NoteList
+              notes={noteListItems}
+              selectedNoteId={state.currentNote?.id}
+              onSelectNote={handleNoteSelect}
+              onCreateNote={() => console.log('Create note')}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
+          }
+          editor={
+            <Editor
+              note={editorNote}
+              mode="rich"
+              onModeChange={(mode) => console.log('Mode:', mode)}
+            />
+          }
+          aiPanel={
+            <AiPanel
+              isOpen={aiPanelOpen}
+              onToggle={() => setAiPanelOpen(!aiPanelOpen)}
+            />
+          }
+          statusBar={
+            <StatusBar
+              version="0.1.0"
+              branch="main"
+              syncStatus="synced"
+              lastSync="2m ago"
+              vaultPath={state.vaultPath}
+              onSync={() => console.log('Sync')}
+              onOpenVault={handleChangeVault}
+              onOpenSettings={() => console.log('Settings')}
+            />
+          }
+        />
       </div>
     </ErrorBoundary>
   );
