@@ -51,7 +51,7 @@ export default function App() {
   const loadNotes = async (path: string) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     try {
-      const { invoke } = await import('@tauri-apps/api/tauri');
+      const { invoke } = await import('@tauri-apps/api/core');
       const notes: VaultEntry[] = await invoke('scan_vault', { vaultPath: path });
       setState(prev => ({ ...prev, notes, isLoading: false }));
     } catch (error) {
@@ -68,7 +68,7 @@ export default function App() {
 
   const handleRevealFile = async () => {
     if (state.currentNote) {
-      const { invoke } = await import('@tauri-apps/api/tauri');
+      const { invoke } = await import('@tauri-apps/api/core');
       await invoke('reveal_file', { path: state.currentNote });
     }
   };
@@ -95,7 +95,7 @@ export default function App() {
 
   const handleSave = async (path: string, content: string) => {
     try {
-      const { invoke } = await import('@tauri-apps/api/tauri');
+      const { invoke } = await import('@tauri-apps/api/core');
       await invoke('save_note_content', { path, content });
     } catch (error) {
       setState(prev => ({ ...prev, error: String(error) }));
@@ -140,3 +140,4 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+

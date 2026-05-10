@@ -49,3 +49,4 @@ export function NoteList({ notes, currentNote, onNoteSelect }: NoteListProps) {
     </div>
   );
 }
+

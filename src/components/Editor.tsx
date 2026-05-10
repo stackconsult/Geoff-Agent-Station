@@ -22,7 +22,7 @@ export function Editor({ currentNote, onRevealFile, onPaste, onSave }: EditorPro
 
   const loadNoteContent = async (path: string) => {
     try {
-      const { invoke } = await import('@tauri-apps/api/tauri');
+      const { invoke } = await import('@tauri-apps/api/core');
       const text: string = await invoke('load_note_content', { path });
       setContent(text);
     } catch (error) {
@@ -92,3 +92,4 @@ export function Editor({ currentNote, onRevealFile, onPaste, onSave }: EditorPro
     </div>
   );
 }
+

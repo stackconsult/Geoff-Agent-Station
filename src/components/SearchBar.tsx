@@ -18,7 +18,7 @@ export function SearchBar({ vaultPath, onResults }: SearchBarProps) {
 
     setIsSearching(true);
     try {
-      const { invoke } = await import('@tauri-apps/api/tauri');
+      const { invoke } = await import('@tauri-apps/api/core');
       const results: string[] = await invoke('search_notes', { 
         vaultPath, 
         query: searchQuery 
@@ -57,3 +57,4 @@ export function SearchBar({ vaultPath, onResults }: SearchBarProps) {
     </div>
   );
 }
+

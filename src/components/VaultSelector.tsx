@@ -26,7 +26,7 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
   const detectVaults = async () => {
     setIsDetecting(true);
     try {
-      const { invoke } = await import('@tauri-apps/api/tauri');
+      const { invoke } = await import('@tauri-apps/api/core');
       const vaults: DetectedVault[] = await invoke('detect_obsidian_vaults');
       setDetectedVaults(vaults);
     } catch (error) {
@@ -141,3 +141,4 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
     </div>
   );
 }
+

@@ -1,6 +1,6 @@
 export async function handleImagePaste(vaultPath: string, filename: string, data: Uint8Array) {
   try {
-    const { invoke } = await import('@tauri-apps/api/tauri');
+    const { invoke } = await import('@tauri-apps/api/core');
     const path = await invoke('save_image', {
       vaultPath,
       filename,
@@ -12,3 +12,4 @@ export async function handleImagePaste(vaultPath: string, filename: string, data
     return null;
   }
 }
+
