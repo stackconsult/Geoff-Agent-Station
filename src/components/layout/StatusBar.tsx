@@ -88,7 +88,7 @@ export function StatusBar({
           className={cn("h-6 px-2 gap-1.5", statusConfig[syncStatus].color)}
           onClick={onSync}
         >
-          <StatusIcon className={cn("h-3 w-3", syncStatus === 'syncing' && 'animate-spin")} />
+          <StatusIcon className={cn("h-3 w-3", syncStatus === 'syncing' && 'animate-spin')} />
           <span>{statusConfig[syncStatus].label}</span>
           {lastSync && syncStatus === 'synced' && (
             <span className="text-[var(--color-text-muted)]">

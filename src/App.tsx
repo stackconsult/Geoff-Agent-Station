@@ -99,11 +99,9 @@ export default function App() {
 
   // Transform notes for NoteList component
   const noteListItems = filteredNotes.map(note => ({
-    id: note.id,
-    title: note.title,
-    snippet: note.content?.substring(0, 150),
-    modifiedAt: new Date(note.modified || Date.now()).toLocaleDateString(),
-    type: note.type,
+    ...note,
+    snippet: '', // Will be loaded when needed
+    modifiedAt: new Date(note.frontmatter?.modified || Date.now()).toLocaleDateString(),
   }));
 
   // Transform current note for Editor

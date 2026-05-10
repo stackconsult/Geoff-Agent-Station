@@ -4,20 +4,12 @@ import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Card, CardContent } from '../ui/Card';
 import { Search, Plus, ArrowUpDown } from 'lucide-react';
-
-interface Note {
-  id: string;
-  title: string;
-  snippet?: string;
-  modifiedAt: string;
-  type?: string;
-  status?: string;
-}
+import type { VaultEntry } from '../../types';
 
 interface NoteListProps {
-  notes: Note[];
+  notes: VaultEntry[];
   selectedNoteId?: string;
-  onSelectNote: (note: Note) => void;
+  onSelectNote: (note: VaultEntry) => void;
   onCreateNote?: () => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;

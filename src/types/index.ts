@@ -2,8 +2,12 @@ export interface VaultEntry {
   id: string;
   title: string;
   path: string;
+  content?: string;
+  snippet?: string;
+  modifiedAt?: string;
   frontmatter: VaultFrontmatter;
   links: string[];
+  type?: string;
 }
 
 export interface VaultFrontmatter {

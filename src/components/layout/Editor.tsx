@@ -68,7 +68,7 @@ export function Editor({
               <span
                 className={cn(
                   "px-1.5 py-0.5 rounded",
-                  index === note.path.length - 1
+                  note.path && index === note.path.length - 1
                     ? "text-[var(--color-text-primary)] font-medium"
                     : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] cursor-pointer"
                 )}
