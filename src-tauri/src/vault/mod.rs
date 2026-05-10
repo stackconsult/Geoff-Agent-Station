@@ -68,8 +68,7 @@ pub async fn scan_vault(vault_path: String) -> Result<Vec<VaultEntry>, String> {
     use crate::vault::cache::{get_cache_path, read_cache, write_cache};
     use crate::vault::parsing::parse_frontmatter;
     use walkdir::WalkDir;
-    use std::path::Path;
-
+    
     let vault_path = validate_vault_path(&vault_path)?;
     let cache_path = get_cache_path(vault_path.to_str().ok_or("Invalid vault path")?);
     

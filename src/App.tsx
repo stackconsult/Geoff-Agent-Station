@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Editor } from './components/Editor';
 import { SidebarSections } from './components/SidebarSections';
 import { NoteList } from './components/NoteList';
@@ -8,6 +8,10 @@ import { handleImagePaste } from './hooks/useImagePaste';
 import type { AppState, VaultEntry } from './types';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoadingSpinner } from './components/LoadingSpinner';
+import { VaultSelector } from './components/VaultSelector';
+import { ErrorDisplay } from './components/ErrorDisplay';
+
+const VAULT_PATH_KEY = 'tolaria_vault_path';
 
 export default function App() {
   const [state, setState] = useState<AppState>({
@@ -17,6 +21,28 @@ export default function App() {
     isLoading: false,
     error: null
   });
+
+  // Load vault path from localStorage on mount
+  useEffect(() => {
+    const savedPath = localStorage.getItem(VAULT_PATH_KEY);
+    if (savedPath) {
+      setState(prev => ({ ...prev, vaultPath: savedPath }));
+    }
+  }, []);
+
+  // Save vault path to localStorage when it changes
+  useEffect(() => {
+    if (state.vaultPath) {
+      localStorage.setItem(VAULT_PATH_KEY, state.vaultPath);
+    }
+  }, [state.vaultPath]);
+
+  // Load notes when vault path is set
+  useEffect(() => {
+    if (state.vaultPath) {
+      loadNotes(state.vaultPath);
+    }
+  }, [state.vaultPath]);
 
   const loadNotes = async (path: string) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -31,6 +57,10 @@ export default function App() {
 
   useVaultLoader(state.vaultPath);
   useAutoGit(state.vaultPath);
+
+  const handleVaultSelect = (path: string) => {
+    setState(prev => ({ ...prev, vaultPath: path }));
+  };
 
   const handleRevealFile = async () => {
     if (state.currentNote) {
@@ -55,23 +85,33 @@ export default function App() {
     }
   };
 
+  const handleDismissError = () => {
+    setState(prev => ({ ...prev, error: null }));
+  };
+
   return (
     <ErrorBoundary>
       <div className="app">
         {state.isLoading && <LoadingSpinner />}
-        <div className="integrated-layout">
-          <div className="sidebar">
-            <h2>Tolaria</h2>
-            <SidebarSections />
-            <NoteList notes={state.notes} />
+        {state.error && <ErrorDisplay error={state.error} onDismiss={handleDismissError} />}
+        
+        {!state.vaultPath ? (
+          <VaultSelector onVaultSelect={handleVaultSelect} isLoading={state.isLoading} />
+        ) : (
+          <div className="integrated-layout">
+            <div className="sidebar">
+              <h2>Tolaria</h2>
+              <SidebarSections />
+              <NoteList notes={state.notes} />
+            </div>
+            <div className="main">
+              <Editor
+                onRevealFile={handleRevealFile}
+                onPaste={handlePaste}
+              />
+            </div>
           </div>
-          <div className="main">
-            <Editor
-              onRevealFile={handleRevealFile}
-              onPaste={handlePaste}
-            />
-          </div>
-        </div>
+        )}
       </div>
     </ErrorBoundary>
   );
