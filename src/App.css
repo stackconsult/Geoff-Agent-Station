@@ -438,10 +438,38 @@ button {
   overflow-y: auto;
 }
 
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .sidebar h2 {
   margin: 0;
   font-size: 1.5rem;
   color: #667eea;
+}
+
+.change-vault-btn {
+  background: transparent;
+  border: 1px solid #667eea;
+  color: #667eea;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.change-vault-btn:hover {
+  background: #667eea;
+  color: #fff;
+}
+
+.empty-notes {
+  text-align: center;
+  color: #888;
+  padding: 1rem;
+  font-size: 0.875rem;
 }
 
 .main {

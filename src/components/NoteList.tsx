@@ -21,6 +21,9 @@ export function NoteList({ notes, currentNote, onNoteSelect }: NoteListProps) {
 
   return (
     <div className="note-list">
+      {notes.length === 0 && (
+        <div className="empty-notes">No notes found in vault</div>
+      )}
       {notes.map((note) => (
         <div
           key={note.id}

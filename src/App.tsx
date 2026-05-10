@@ -106,6 +106,11 @@ export default function App() {
     setState(prev => ({ ...prev, error: null }));
   };
 
+  const handleChangeVault = () => {
+    localStorage.removeItem(VAULT_PATH_KEY);
+    setState({ vaultPath: '', notes: [], currentNote: null, isLoading: false, error: null });
+  };
+
   return (
     <ErrorBoundary>
       <div className="app">
@@ -117,7 +122,10 @@ export default function App() {
         ) : (
           <div className="integrated-layout">
             <div className="sidebar">
-              <h2>Tolaria</h2>
+              <div className="sidebar-header">
+                <h2>Tolaria</h2>
+                <button onClick={handleChangeVault} className="change-vault-btn" title="Change Vault">↻</button>
+              </div>
               <SearchBar vaultPath={state.vaultPath} onResults={setSearchResults} />
               <SidebarSections notes={state.notes} />
               <NoteList 
