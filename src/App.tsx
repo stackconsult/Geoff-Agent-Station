@@ -26,11 +26,17 @@ export default function App() {
   const [searchResults, setSearchResults] = useState<VaultEntry[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Load vault path from localStorage on mount
+  const DEFAULT_VAULT_PATH = 'C:\\Users\\Geoff Parsons\\Desktop\\tolaria-automation\\vault';
+
+  // Load vault path from localStorage on mount, fallback to default
   useEffect(() => {
     const savedPath = localStorage.getItem(VAULT_PATH_KEY);
     if (savedPath) {
       setState(prev => ({ ...prev, vaultPath: savedPath }));
+    } else {
+      // Set default vault for this workspace
+      localStorage.setItem(VAULT_PATH_KEY, DEFAULT_VAULT_PATH);
+      setState(prev => ({ ...prev, vaultPath: DEFAULT_VAULT_PATH }));
     }
   }, []);
 
