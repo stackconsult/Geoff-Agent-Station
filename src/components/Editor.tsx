@@ -18,7 +18,7 @@ export function Editor({ currentNote, onRevealFile, onPaste, onSave }: EditorPro
     } else {
       setContent('');
     }
-  }, [currentNote?.id]);
+  }, [currentNote?.path]);
 
   const loadNoteContent = async (path: string) => {
     try {
@@ -62,7 +62,7 @@ export function Editor({ currentNote, onRevealFile, onPaste, onSave }: EditorPro
     }, 2000);
     
     return () => clearTimeout(timeoutId);
-  }, [content, currentNote?.id]);
+  }, [content, currentNote?.path]);
 
   if (!currentNote) {
     return (

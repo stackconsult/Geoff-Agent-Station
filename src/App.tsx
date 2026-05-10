@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAutoGit } from './hooks/useAutoGit';
 import { useVaultLoader } from './hooks/useVaultLoader';
-import type { AppState, VaultEntry } from './types';
+import type { AppState, VaultEntry, SidebarSelection, SyncStatus } from './types';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { VaultSelector } from './components/VaultSelector';
@@ -34,6 +34,11 @@ export default function App() {
   const [aiPanelOpen, setAiPanelOpen] = useState(true);
   const [currentNoteContent, setCurrentNoteContent] = useState('');
   const [isLoadingNote, setIsLoadingNote] = useState(false);
+  const [editorMode, setEditorMode] = useState<'rich' | 'raw'>('rich');
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  // SidebarSelection — real Tolaria union type
+  const [sidebarSelection, setSidebarSelection] = useState<SidebarSelection>({ kind: 'filter', filter: 'inbox' });
 
   const DEFAULT_VAULT_PATH = 'C:\\Users\\Geoff Parsons\\Desktop\\tolaria-automation\\vault';
 
@@ -76,13 +81,6 @@ export default function App() {
   useVaultLoader(state.vaultPath);
   useAutoGit(state.vaultPath);
 
-  // Filter notes based on search query
-  const filteredNotes = searchQuery
-    ? state.notes.filter(note => 
-        note.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : state.notes;
-
   const handleVaultSelect = (path: string) => {
     setState(prev => ({ ...prev, vaultPath: path }));
   };
@@ -111,16 +109,17 @@ export default function App() {
 
   const handleSaveNote = useCallback(async () => {
     if (!state.currentNote?.path) return;
-    
+    setSyncStatus('syncing');
     try {
-      await invoke('save_note_content', { 
-        path: state.currentNote.path, 
-        content: currentNoteContent 
+      await invoke('save_note_content', {
+        path: state.currentNote.path,
+        content: currentNoteContent,
       });
-      
-      // Refresh the note list to show updated timestamps
+      setLastSyncTime(Date.now());
+      setSyncStatus('idle');
       loadNotes(state.vaultPath);
     } catch (error) {
+      setSyncStatus('error');
       setState(prev => ({ ...prev, error: String(error) }));
     }
   }, [state.currentNote, currentNoteContent, state.vaultPath]);
@@ -134,19 +133,27 @@ export default function App() {
     setState({ vaultPath: '', notes: [], currentNote: null, isLoading: false, error: null });
   };
 
-  // Transform notes for NoteList component
-  const noteListItems = filteredNotes.map(note => ({
-    ...note,
-    snippet: '', // Will be loaded when needed
-    modifiedAt: new Date(note.frontmatter?.modified || Date.now()).toLocaleDateString(),
-  }));
+  // Filter notes by sidebar selection + search query
+  const filteredNotes = state.notes.filter((note) => {
+    if (searchQuery && !note.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (sidebarSelection.kind === 'filter') {
+      if (sidebarSelection.filter === 'archived') return note.archived;
+      if (sidebarSelection.filter === 'favorites') return note.favorite;
+      if (sidebarSelection.filter === 'inbox') return !note.organized && !note.archived;
+      // 'all', 'changes', 'pulse' — show all non-archived
+      return !note.archived;
+    }
+    if (sidebarSelection.kind === 'sectionGroup') return note.isA === sidebarSelection.type;
+    if (sidebarSelection.kind === 'folder') return note.path.startsWith(sidebarSelection.path);
+    return true;
+  });
 
-  // Transform current note for Editor
+  // Editor note shape — path as breadcrumb segments
   const editorNote = state.currentNote ? {
-    id: state.currentNote.id,
+    id: state.currentNote.path,
     title: state.currentNote.title,
     content: currentNoteContent,
-    path: ['Vault', state.currentNote.title],
+    path: state.currentNote.path.split(/[\\/]/).filter(Boolean).slice(-3),
     isLoading: isLoadingNote,
   } : null;
 
@@ -171,17 +178,18 @@ export default function App() {
         <AppLayout
           sidebar={
             <Sidebar
-              vaultName={state.vaultPath.split('/').pop() || 'Vault'}
-              currentFilter="all"
-              onFilterChange={(filter) => console.log('Filter:', filter)}
+              vaultName={state.vaultPath.split(/[\\/]/).pop() || 'Vault'}
+              entries={state.notes}
+              selection={sidebarSelection}
+              onSelect={setSidebarSelection}
             />
           }
           noteList={
             <NoteList
-              notes={noteListItems}
-              selectedNoteId={state.currentNote?.id}
+              notes={filteredNotes}
+              selectedNotePath={state.currentNote?.path}
               onSelectNote={handleNoteSelect}
-              onCreateNote={() => console.log('Create note')}
+              onCreateNote={() => console.log('TODO: create note')}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
@@ -189,8 +197,8 @@ export default function App() {
           editor={
             <Editor
               note={editorNote}
-              mode="rich"
-              onModeChange={(mode) => console.log('Mode:', mode)}
+              mode={editorMode}
+              onModeChange={setEditorMode}
               onContentChange={handleContentChange}
               onSave={handleSaveNote}
             />
@@ -203,14 +211,14 @@ export default function App() {
           }
           statusBar={
             <StatusBar
-              version="0.1.0"
-              branch="main"
-              syncStatus="synced"
-              lastSync="2m ago"
+              noteCount={state.notes.length}
               vaultPath={state.vaultPath}
-              onSync={() => console.log('Sync')}
+              syncStatus={syncStatus}
+              lastSyncTime={lastSyncTime}
+              isVaultReloading={state.isLoading}
+              onSync={handleSaveNote}
               onOpenVault={handleChangeVault}
-              onOpenSettings={() => console.log('Settings')}
+              onOpenSettings={() => console.log('TODO: settings')}
             />
           }
         />

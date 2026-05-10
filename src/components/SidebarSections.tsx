@@ -7,10 +7,7 @@ interface SidebarSectionsProps {
 
 export function SidebarSections({ notes }: SidebarSectionsProps) {
   const inboxCount = useMemo(() => {
-    return notes.filter(note => 
-      note.frontmatter.type === 'inbox' || 
-      !note.frontmatter.type
-    ).length;
+    return notes.filter(note => !note.organized && !note.archived).length;
   }, [notes]);
 
   return (

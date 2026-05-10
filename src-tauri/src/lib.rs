@@ -7,6 +7,9 @@ mod window;
 mod vault_detection;
 pub mod validation;
 mod automation;
+mod ai;
+mod clipboard;
+mod productivity;
 
 // Commands module - must be declared before use
 mod commands;
@@ -59,7 +62,28 @@ pub fn run() {
             automation::commands::list_scheduled_tasks,
             automation::commands::enable_scheduled_task,
             automation::commands::disable_scheduled_task,
-            automation::commands::delete_scheduled_task
+            automation::commands::delete_scheduled_task,
+            // AI commands
+            commands::ai::ai_initialize,
+            commands::ai::ai_chat,
+            commands::ai::ai_clear_history,
+            commands::ai::ai_get_history,
+            commands::ai::ai_update_config,
+            // Clipboard commands
+            commands::clipboard::clipboard_get_text,
+            commands::clipboard::clipboard_set_text,
+            commands::clipboard::clipboard_get_history,
+            commands::clipboard::clipboard_search,
+            commands::clipboard::clipboard_toggle_favorite,
+            commands::clipboard::clipboard_delete_entry,
+            commands::clipboard::clipboard_clear_history,
+            // Productivity commands
+            commands::productivity::productivity_start_tracking,
+            commands::productivity::productivity_stop_tracking,
+            commands::productivity::productivity_get_stats,
+            commands::productivity::productivity_start_pomodoro,
+            commands::productivity::productivity_get_pomodoro_status,
+            commands::productivity::productivity_stop_pomodoro
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
