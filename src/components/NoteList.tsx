@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { organizeSelectedNotes } from '../hooks/useNoteActions';
+import type { VaultEntry } from '../types';
 
-export function NoteList({ notes }: { notes: any[] }) {
+interface NoteListProps {
+  notes: VaultEntry[];
+  currentNote: VaultEntry | null;
+  onNoteSelect: (note: VaultEntry) => void;
+}
+
+export function NoteList({ notes, currentNote, onNoteSelect }: NoteListProps) {
   const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
 
   const handleOrganize = async () => {
@@ -15,12 +22,17 @@ export function NoteList({ notes }: { notes: any[] }) {
   return (
     <div className="note-list">
       {notes.map((note) => (
-        <div key={note.id} className="note-item">
+        <div
+          key={note.id}
+          className={`note-item ${currentNote?.id === note.id ? 'active' : ''}`}
+          onClick={() => onNoteSelect(note)}
+        >
           <input
             type="checkbox"
             id={`note-${note.id}`}
             checked={selectedNotes.includes(note.id)}
             onChange={(e) => {
+              e.stopPropagation();
               if (e.target.checked) {
                 setSelectedNotes([...selectedNotes, note.id]);
               } else {

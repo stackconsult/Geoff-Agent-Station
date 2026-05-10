@@ -37,6 +37,7 @@ pub fn run() {
             commands::media::save_image,
             // Vault commands
             commands::vault::search_notes,
+            commands::vault::load_note_content,
             commands::vault::update_frontmatter,
             // System commands
             system::get_machine_specs,

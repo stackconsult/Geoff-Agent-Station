@@ -56,8 +56,11 @@ pub async fn get_workflow(id: String) -> Result<Workflow, String> {
 
 #[tauri::command]
 pub async fn execute_workflow(id: String) -> Result<String, String> {
-    let engine = AUTOMATION_ENGINE.lock().map_err(|e| e.to_string())?;
-    engine.execute_workflow(&id).await
+    let workflow = {
+        let engine = AUTOMATION_ENGINE.lock().map_err(|e| e.to_string())?;
+        engine.get_workflow(&id)?
+    };
+    workflow.execute().await
 }
 
 #[tauri::command]

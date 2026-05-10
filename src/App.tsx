@@ -85,6 +85,22 @@ export default function App() {
     }
   };
 
+  const handleNoteSelect = (note: VaultEntry) => {
+    setState(prev => ({ ...prev, currentNote: note }));
+  };
+
+  const handleSave = async (path: string, content: string) => {
+    try {
+      const { invoke } = await import('@tauri-apps/api/tauri');
+      await invoke('update_frontmatter', { path, frontmatter: {} });
+      // For now, save via file write - in production use a proper save command
+      await invoke('reveal_file', { path });
+      console.log('Note saved:', path);
+    } catch (error) {
+      setState(prev => ({ ...prev, error: String(error) }));
+    }
+  };
+
   const handleDismissError = () => {
     setState(prev => ({ ...prev, error: null }));
   };
@@ -102,12 +118,14 @@ export default function App() {
             <div className="sidebar">
               <h2>Tolaria</h2>
               <SidebarSections />
-              <NoteList notes={state.notes} />
+              <NoteList notes={state.notes} currentNote={state.currentNote} onNoteSelect={handleNoteSelect} />
             </div>
             <div className="main">
               <Editor
+                currentNote={state.currentNote}
                 onRevealFile={handleRevealFile}
                 onPaste={handlePaste}
+                onSave={handleSave}
               />
             </div>
           </div>

@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use chrono::Timelike;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -107,12 +108,12 @@ impl Condition {
             },
             
             Condition::ProcessRunning { process_name } => {
-                use sysinfo::{System, SystemExt, ProcessExt};
+                use sysinfo::System;
                 let mut sys = System::new_all();
                 sys.refresh_all();
                 
                 Ok(sys.processes().values().any(|p| 
-                    p.name().to_lowercase().contains(&process_name.to_lowercase())
+                    p.name().to_string().to_lowercase().contains(&process_name.to_lowercase())
                 ))
             },
             
