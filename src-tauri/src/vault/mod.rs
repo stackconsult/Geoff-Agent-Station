@@ -22,6 +22,7 @@ pub struct VaultEntry {
     pub title: String,
     pub path: PathBuf,
     pub frontmatter: VaultFrontmatter,
+    pub links: Vec<String>,
 }
 
 #[tauri::command]

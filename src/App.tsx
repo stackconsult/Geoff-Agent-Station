@@ -1,30 +1,39 @@
-import { useState, useEffect } from 'react';
-import Editor from './components/Editor';
-import SidebarSections from './components/SidebarSections';
-import NoteList from './components/NoteList';
+import { useState } from 'react';
+import { Editor } from './components/Editor';
+import { SidebarSections } from './components/SidebarSections';
+import { NoteList } from './components/NoteList';
 import { useAutoGit } from './hooks/useAutoGit';
-import { useCommitFlow } from './hooks/useCommitFlow';
 import { useVaultLoader } from './hooks/useVaultLoader';
-import { useNoteActions } from './hooks/useNoteActions';
-import { useImagePaste } from './hooks/useImagePaste';
+import { handleImagePaste } from './hooks/useImagePaste';
 
 export default function App() {
   const [vaultPath, setVaultPath] = useState('');
-  const [currentNote, setCurrentNote] = useState('');
   const [currentPath, setCurrentPath] = useState('');
+  const [notes, setNotes] = useState<any[]>([]);
 
-  const { calculateInboxNotes } = useNoteActions();
-  const { handlePaste } = useImagePaste(vaultPath);
-
-  useEffect(() => {
-    useVaultLoader(vaultPath);
-  }, [vaultPath]);
-
+  useVaultLoader(vaultPath);
   useAutoGit(vaultPath);
 
-  const handleRevealFile = () => {
+  const handleRevealFile = async () => {
     if (currentPath) {
-      window.__TAURI__.invoke('reveal_file', { path: currentPath });
+      const { invoke } = await import('@tauri-apps/api/tauri');
+      await invoke('reveal_file', { path: currentPath });
+    }
+  };
+
+  const handlePaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          const data = await file.arrayBuffer();
+          const filename = file.name;
+          await handleImagePaste(vaultPath, filename, new Uint8Array(data));
+        }
+      }
     }
   };
 
@@ -33,13 +42,11 @@ export default function App() {
       <div className="integrated-layout">
         <div className="sidebar">
           <h2>Tolaria</h2>
-          <SidebarSections vaultPath={vaultPath} />
-          <NoteList vaultPath={vaultPath} />
+          <SidebarSections />
+          <NoteList notes={notes} />
         </div>
         <div className="main">
           <Editor
-            content={currentNote}
-            path={currentPath}
             onRevealFile={handleRevealFile}
             onPaste={handlePaste}
           />

@@ -1,17 +1,7 @@
-import { calculateInboxNotes } from '../hooks/useNoteActions';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
-export function SidebarSections({ vaultPath }: { vaultPath: string }) {
+export function SidebarSections() {
   const [inboxCount, setInboxCount] = useState(0);
-
-  useEffect(() => {
-    const updateInboxCount = async () => {
-      const inboxNotes = await calculateInboxNotes(vaultPath);
-      setInboxCount(inboxNotes.length);
-    };
-
-    updateInboxCount();
-  }, [vaultPath]);
 
   return (
     <div className="sidebar-sections">
