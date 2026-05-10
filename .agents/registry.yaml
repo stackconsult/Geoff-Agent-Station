@@ -1,0 +1,305 @@
+# Tolaria Build Agent Registry
+# Multi-agent system for building the Tolaria desktop UI
+
+orchestrator:
+  name: Tolaria Build Orchestrator
+  description: Coordinates the build of Tolaria UI across specialized sub-agents
+  model: claude-sonnet-4-20250514
+  max_tokens: 8192
+  system_prompt: .agents/orchestrator/prompts/system.md
+
+sub_agents:
+  researcher:
+    name: Architecture Researcher
+    description: Researches Tolaria architecture from GitHub and extracts exact specifications
+    capabilities:
+      - architecture_analysis
+      - code_extraction
+      - pattern_identification
+      - tech_stack_research
+    tools:
+      - web_search
+      - file_read
+      - mcp_github
+    prompt: .agents/sub-agents/researcher/prompts/system.md
+    
+  ui_ux_designer:
+    name: UI/UX Designer
+    description: Designs components, layouts, and interactions following Tolaria patterns
+    capabilities:
+      - component_design
+      - layout_architecture
+      - interaction_design
+      - design_system_creation
+    tools:
+      - file_read
+      - file_write
+    prompt: .agents/sub-agents/ui-ux-designer/prompts/system.md
+    
+  coder:
+    name: Implementation Coder
+    description: Implements React/TypeScript components, hooks, and integrations
+    capabilities:
+      - react_development
+      - typescript_coding
+      - integration_wiring
+      - backend_commands
+    tools:
+      - file_read
+      - file_write
+      - shell_execute
+      - mcp_tauri
+    prompt: .agents/sub-agents/coder/prompts/system.md
+    
+  qa_tester:
+    name: QA & Integration Tester
+    description: Tests components, validates builds, ensures production readiness
+    capabilities:
+      - component_testing
+      - build_validation
+      - e2e_testing
+      - deployment_check
+    tools:
+      - shell_execute
+      - playwright
+      - mcp_tauri
+    prompt: .agents/sub-agents/qa-tester/prompts/system.md
+
+workflows:
+  phase_1_foundation:
+    name: Phase 1 - Foundation
+    description: Install dependencies, create design system, build base layout
+    steps:
+      - agent: researcher
+        task: Extract exact component patterns from refactoringhq/tolaria
+      - agent: ui_ux_designer
+        task: Create CSS design tokens and component specifications
+      - agent: coder
+        task: Install BlockNote, CodeMirror, Framer Motion, Radix UI
+      - agent: coder
+        task: Create base UI components (Button, Input, Card, Dialog)
+      - agent: qa_tester
+        task: Validate TypeScript compilation and dependencies
+        
+  phase_2_layout:
+    name: Phase 2 - Four-Panel Layout
+    description: Build Sidebar, NoteList, Editor shell, AiPanel, StatusBar
+    steps:
+      - agent: ui_ux_designer
+        task: Design four-panel layout with resizable panes
+      - agent: coder
+        task: Implement AppLayout with grid/flexbox
+      - agent: coder
+        task: Build Sidebar with filters and folder tree
+      - agent: coder
+        task: Build NoteList with search and sort
+      - agent: coder
+        task: Build Editor shell with breadcrumb
+      - agent: coder
+        task: Build AiPanel placeholder and StatusBar
+      - agent: qa_tester
+        task: Test layout responsiveness and accessibility
+        
+  phase_3_editor:
+    name: Phase 3 - Rich Editor
+    description: Integrate BlockNote, CodeMirror, wikilinks
+    steps:
+      - agent: researcher
+        task: Extract BlockNote schema and wikilink implementation
+      - agent: coder
+        task: Integrate BlockNote with custom schema
+      - agent: coder
+        task: Add CodeMirror 6 raw markdown toggle
+      - agent: coder
+        task: Implement wikilink autocomplete [[ ]]
+      - agent: ui_ux_designer
+        task: Design editor toolbar and formatting
+      - agent: qa_tester
+        task: Test editor functionality and markdown roundtrip
+        
+  phase_4_ai_integration:
+    name: Phase 4 - AI & MCP
+    description: Build AiPanel, MCP server integration, CLI agents
+    steps:
+      - agent: researcher
+        task: Extract AI panel and MCP architecture
+      - agent: coder
+        task: Build AiPanel UI with message threading
+      - agent: coder
+        task: Implement MCP WebSocket bridge (ports 9710, 9711)
+      - agent: coder
+        task: Add CLI agent adapters (Claude, Codex placeholders)
+      - agent: qa_tester
+        task: Test AI panel and MCP connectivity
+        
+  phase_5_command_palette:
+    name: Phase 5 - Command Palette & Polish
+    description: Cmd+K, git integration, settings, themes
+    steps:
+      - agent: coder
+        task: Implement Command Palette with Cmd+K
+      - agent: coder
+        task: Add fuzzy search and command registry
+      - agent: coder
+        task: Build SettingsPanel with theme switching
+      - agent: ui_ux_designer
+        task: Design light/dark theme CSS variables
+      - agent: qa_tester
+        task: Full E2E testing with Playwright
+      - agent: qa_tester
+        task: Production build validation
+      - agent: qa_tester
+        task: Deployment verification
+
+action_functions:
+  # Researcher Actions
+  extract_architecture:
+    agent: researcher
+    inputs:
+      - source: string  # GitHub repo or docs URL
+      - component: string  # Component to research
+    outputs:
+      - patterns: object  # Extracted patterns
+      - code_snippets: array  # Reference code
+      - dependencies: array  # Required packages
+      
+  analyze_tech_stack:
+    agent: researcher
+    inputs:
+      - repo_url: string
+    outputs:
+      - frontend_stack: array
+      - backend_stack: array
+      - build_tools: array
+      
+  # UI/UX Designer Actions
+  create_design_tokens:
+    agent: ui_ux_designer
+    inputs:
+      - reference_theme: string  # light/dark
+    outputs:
+      - css_variables: string
+      - component_specs: object
+      
+  design_component:
+    agent: ui_ux_designer
+    inputs:
+      - component_name: string
+      - reference_implementation: string
+    outputs:
+      - props_interface: object
+      - styling_approach: string
+      - interaction_spec: object
+      
+  # Coder Actions
+  install_dependencies:
+    agent: coder
+    inputs:
+      - packages: array
+      - dev_packages: array
+    outputs:
+      - package_json: object
+      - install_log: string
+      
+  implement_component:
+    agent: coder
+    inputs:
+      - component_name: string
+      - file_path: string
+      - design_spec: object
+      - dependencies: array
+    outputs:
+      - component_code: string
+      - test_code: string
+      - storybook: string
+      
+  integrate_editor:
+    agent: coder
+    inputs:
+      - editor_type: string  # blocknote/codemirror
+      - schema_extensions: array
+    outputs:
+      - integration_code: string
+      - custom_schema: string
+      
+  add_tauri_command:
+    agent: coder
+    inputs:
+      - command_name: string
+      - params: object
+      - rust_impl: string
+    outputs:
+      - rust_code: string
+      - typescript_binding: string
+      
+  # QA Tester Actions
+  validate_typescript:
+    agent: qa_tester
+    inputs:
+      - project_path: string
+    outputs:
+      - errors: array
+      - warnings: array
+      - status: string
+      
+  test_build:
+    agent: qa_tester
+    inputs:
+      - build_command: string
+    outputs:
+      - build_status: string
+      - bundle_size: number
+      - errors: array
+      
+  run_e2e_tests:
+    agent: qa_tester
+    inputs:
+      - test_spec: string
+    outputs:
+      - passed: number
+      - failed: number
+      - coverage: number
+      
+  validate_deployment:
+    agent: qa_tester
+    inputs:
+      - executable_path: string
+    outputs:
+      - launch_success: boolean
+      - window_title: string
+      - basic_functionality: boolean
+
+# Orchestrator Decision Matrix
+decision_rules:
+  when_to_delegate_researcher:
+    - "Need to understand external architecture"
+    - "Extracting patterns from reference implementation"
+    - "Investigating unknown dependencies"
+    
+  when_to_delegate_ui_ux:
+    - "Designing new components"
+    - "Creating design system"
+    - "Defining component APIs"
+    - "Theme and styling decisions"
+    
+  when_to_delegate_coder:
+    - "Implementing components"
+    - "Installing dependencies"
+    - "Adding backend commands"
+    - "Integration work"
+    
+  when_to_delegate_qa:
+    - "TypeScript validation"
+    - "Build testing"
+    - "E2E testing"
+    - "Deployment verification"
+    
+  parallel_execution:
+    - "Base components can be built in parallel"
+    - "Research and design can happen simultaneously"
+    - "Backend and frontend can be developed in parallel"
+    
+  sequential_requirements:
+    - "Design must precede implementation"
+    - "Foundation must precede features"
+    - "Build must pass before deployment"
