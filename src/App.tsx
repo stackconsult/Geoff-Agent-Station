@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useAutoGit } from './hooks/useAutoGit';
 import { useVaultLoader } from './hooks/useVaultLoader';
 import type { AppState, VaultEntry } from './types';
@@ -31,6 +32,8 @@ export default function App() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [aiPanelOpen, setAiPanelOpen] = useState(true);
+  const [currentNoteContent, setCurrentNoteContent] = useState('');
+  const [isLoadingNote, setIsLoadingNote] = useState(false);
 
   const DEFAULT_VAULT_PATH = 'C:\\Users\\Geoff Parsons\\Desktop\\tolaria-automation\\vault';
 
@@ -84,9 +87,43 @@ export default function App() {
     setState(prev => ({ ...prev, vaultPath: path }));
   };
 
-  const handleNoteSelect = (note: VaultEntry) => {
+  const handleNoteSelect = useCallback(async (note: VaultEntry) => {
     setState(prev => ({ ...prev, currentNote: note }));
-  };
+    
+    // CRITICAL: Load actual note content from disk
+    if (note.path) {
+      setIsLoadingNote(true);
+      try {
+        const content: string = await invoke('load_note_content', { path: note.path });
+        setCurrentNoteContent(content);
+      } catch (error) {
+        console.error('Failed to load note:', error);
+        setCurrentNoteContent('');
+      } finally {
+        setIsLoadingNote(false);
+      }
+    }
+  }, []);
+
+  const handleContentChange = useCallback((content: string) => {
+    setCurrentNoteContent(content);
+  }, []);
+
+  const handleSaveNote = useCallback(async () => {
+    if (!state.currentNote?.path) return;
+    
+    try {
+      await invoke('save_note_content', { 
+        path: state.currentNote.path, 
+        content: currentNoteContent 
+      });
+      
+      // Refresh the note list to show updated timestamps
+      loadNotes(state.vaultPath);
+    } catch (error) {
+      setState(prev => ({ ...prev, error: String(error) }));
+    }
+  }, [state.currentNote, currentNoteContent, state.vaultPath]);
 
   const handleDismissError = () => {
     setState(prev => ({ ...prev, error: null }));
@@ -108,8 +145,9 @@ export default function App() {
   const editorNote = state.currentNote ? {
     id: state.currentNote.id,
     title: state.currentNote.title,
-    content: state.currentNote.content || '',
+    content: currentNoteContent,
     path: ['Vault', state.currentNote.title],
+    isLoading: isLoadingNote,
   } : null;
 
   if (!state.vaultPath) {
@@ -153,6 +191,8 @@ export default function App() {
               note={editorNote}
               mode="rich"
               onModeChange={(mode) => console.log('Mode:', mode)}
+              onContentChange={handleContentChange}
+              onSave={handleSaveNote}
             />
           }
           aiPanel={
