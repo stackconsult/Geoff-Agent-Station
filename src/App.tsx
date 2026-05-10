@@ -5,14 +5,9 @@ import { NoteList } from './components/NoteList';
 import { useAutoGit } from './hooks/useAutoGit';
 import { useVaultLoader } from './hooks/useVaultLoader';
 import { handleImagePaste } from './hooks/useImagePaste';
-
-interface AppState {
-  vaultPath: string;
-  notes: any[];
-  currentNote: string | null;
-  isLoading: boolean;
-  error: string | null;
-}
+import type { AppState, VaultEntry } from './types';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { LoadingSpinner } from './components/LoadingSpinner';
 
 export default function App() {
   const [state, setState] = useState<AppState>({
@@ -27,7 +22,7 @@ export default function App() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     try {
       const { invoke } = await import('@tauri-apps/api/tauri');
-      const notes = await invoke('scan_vault', { vaultPath: path });
+      const notes: VaultEntry[] = await invoke('scan_vault', { vaultPath: path });
       setState(prev => ({ ...prev, notes, isLoading: false }));
     } catch (error) {
       setState(prev => ({ ...prev, error: String(error), isLoading: false }));
@@ -61,20 +56,23 @@ export default function App() {
   };
 
   return (
-    <div className="app">
-      <div className="integrated-layout">
-        <div className="sidebar">
-          <h2>Tolaria</h2>
-          <SidebarSections />
-          <NoteList notes={state.notes} />
-        </div>
-        <div className="main">
-          <Editor
-            onRevealFile={handleRevealFile}
-            onPaste={handlePaste}
-          />
+    <ErrorBoundary>
+      <div className="app">
+        {state.isLoading && <LoadingSpinner />}
+        <div className="integrated-layout">
+          <div className="sidebar">
+            <h2>Tolaria</h2>
+            <SidebarSections />
+            <NoteList notes={state.notes} />
+          </div>
+          <div className="main">
+            <Editor
+              onRevealFile={handleRevealFile}
+              onPaste={handlePaste}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }

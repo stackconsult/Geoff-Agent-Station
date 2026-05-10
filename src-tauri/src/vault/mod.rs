@@ -6,6 +6,20 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
+fn validate_vault_path(path: &str) -> Result<PathBuf, String> {
+    let path = PathBuf::from(path);
+    
+    if !path.exists() {
+        return Err("Vault path does not exist".to_string());
+    }
+    
+    if !path.is_dir() {
+        return Err("Vault path is not a directory".to_string());
+    }
+    
+    Ok(path)
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct VaultFrontmatter {
     #[serde(default)]
@@ -56,7 +70,7 @@ pub async fn scan_vault(vault_path: String) -> Result<Vec<VaultEntry>, String> {
     use walkdir::WalkDir;
     use std::path::Path;
 
-    let vault_path = Path::new(&vault_path);
+    let vault_path = validate_vault_path(&vault_path)?;
     let cache_path = get_cache_path(vault_path.to_str().ok_or("Invalid vault path")?);
     
     // Try to read from cache first

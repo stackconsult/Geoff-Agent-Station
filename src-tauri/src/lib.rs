@@ -3,6 +3,7 @@ mod vault;
 mod git;
 mod mcp;
 mod commands;
+pub mod validation;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
