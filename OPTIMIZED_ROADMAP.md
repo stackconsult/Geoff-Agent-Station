@@ -78,7 +78,7 @@ git checkout HEAD -- src/App.tsx src/hooks/useImagePaste.ts
 ```
 
 **Failure Ledger Entry:**
-If static import fails, add: "Always use dynamic import for @tauri-apps/api/tauri due to TypeScript module resolution issue (verified 2025-05-09)"
+**CONFIRMED FAILURE (2025-05-09):** Static import for @tauri-apps/api/tauri fails with TypeScript module resolution errors. Always use dynamic import for @tauri-apps/api/tauri due to TypeScript module resolution issue. This is a known limitation of the current project configuration.
 
 ---
 

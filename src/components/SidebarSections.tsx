@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 export function SidebarSections() {
-  const [inboxCount, setInboxCount] = useState(0);
+  const [inboxCount] = useState(0);
 
   return (
     <div className="sidebar-sections">

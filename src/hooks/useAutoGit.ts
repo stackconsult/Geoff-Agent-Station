@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
 
 export function useAutoGit(vaultPath: string) {
   const [isIdle, setIsIdle] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    let idleTimer: NodeJS.Timeout;
+    let idleTimer: ReturnType<typeof setTimeout>;
 
     const checkIdleState = () => {
       // Check if user has been idle for 5 minutes
@@ -19,6 +18,22 @@ export function useAutoGit(vaultPath: string) {
       idleTimer = setTimeout(checkIdleState, 5 * 60 * 1000);
     };
 
+    const runAutomaticCheckpoint = async () => {
+      try {
+        const { invoke } = await import('@tauri-apps/api/tauri');
+        await invoke('git_commit', { vaultPath, message: 'Auto-saved changes' });
+      } catch (error) {
+        console.error('Failed to auto-commit:', error);
+      }
+    };
+
+    // Check idle state every minute
+    const interval = setInterval(() => {
+      if (isIdle && hasChanges) {
+        runAutomaticCheckpoint();
+      }
+    }, 60 * 1000);
+
     // Reset idle timer on user activity
     window.addEventListener('mousemove', resetIdleTimer);
     window.addEventListener('keydown', resetIdleTimer);
@@ -26,21 +41,12 @@ export function useAutoGit(vaultPath: string) {
     resetIdleTimer();
 
     return () => {
+      clearInterval(interval);
       clearTimeout(idleTimer);
       window.removeEventListener('mousemove', resetIdleTimer);
       window.removeEventListener('keydown', resetIdleTimer);
     };
-  }, []);
-
-  useEffect(() => {
-    if (isIdle && hasChanges) {
-      // Trigger automatic checkpoint
-      invoke('git_commit', {
-        vaultPath,
-        message: 'AutoGit checkpoint'
-      });
-    }
-  }, [isIdle, hasChanges, vaultPath]);
+  }, [vaultPath]);
 
   return { isIdle, hasChanges, setHasChanges };
 }

@@ -7,9 +7,9 @@ import { useVaultLoader } from './hooks/useVaultLoader';
 import { handleImagePaste } from './hooks/useImagePaste';
 
 export default function App() {
-  const [vaultPath, setVaultPath] = useState('');
-  const [currentPath, setCurrentPath] = useState('');
-  const [notes, setNotes] = useState<any[]>([]);
+  const [vaultPath] = useState('');
+  const [currentPath] = useState('');
+  const [notes] = useState<any[]>([]);
 
   useVaultLoader(vaultPath);
   useAutoGit(vaultPath);
