@@ -10,6 +10,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { VaultSelector } from './components/VaultSelector';
 import { ErrorDisplay } from './components/ErrorDisplay';
+import { SearchBar } from './components/SearchBar';
 
 const VAULT_PATH_KEY = 'tolaria_vault_path';
 
@@ -21,6 +22,9 @@ export default function App() {
     isLoading: false,
     error: null
   });
+  
+  const [searchResults, setSearchResults] = useState<VaultEntry[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Load vault path from localStorage on mount
   useEffect(() => {
@@ -92,10 +96,7 @@ export default function App() {
   const handleSave = async (path: string, content: string) => {
     try {
       const { invoke } = await import('@tauri-apps/api/tauri');
-      await invoke('update_frontmatter', { path, frontmatter: {} });
-      // For now, save via file write - in production use a proper save command
-      await invoke('reveal_file', { path });
-      console.log('Note saved:', path);
+      await invoke('save_note_content', { path, content });
     } catch (error) {
       setState(prev => ({ ...prev, error: String(error) }));
     }
@@ -117,8 +118,13 @@ export default function App() {
           <div className="integrated-layout">
             <div className="sidebar">
               <h2>Tolaria</h2>
-              <SidebarSections />
-              <NoteList notes={state.notes} currentNote={state.currentNote} onNoteSelect={handleNoteSelect} />
+              <SearchBar vaultPath={state.vaultPath} onResults={setSearchResults} />
+              <SidebarSections notes={state.notes} />
+              <NoteList 
+                notes={searchResults.length > 0 ? searchResults : state.notes} 
+                currentNote={state.currentNote} 
+                onNoteSelect={handleNoteSelect} 
+              />
             </div>
             <div className="main">
               <Editor

@@ -38,6 +38,7 @@ pub fn run() {
             // Vault commands
             commands::vault::search_notes,
             commands::vault::load_note_content,
+            commands::vault::save_note_content,
             commands::vault::update_frontmatter,
             // System commands
             system::get_machine_specs,

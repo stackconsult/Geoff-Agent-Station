@@ -1,7 +1,17 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
+import type { VaultEntry } from '../types';
 
-export function SidebarSections() {
-  const [inboxCount] = useState(0);
+interface SidebarSectionsProps {
+  notes: VaultEntry[];
+}
+
+export function SidebarSections({ notes }: SidebarSectionsProps) {
+  const inboxCount = useMemo(() => {
+    return notes.filter(note => 
+      note.frontmatter.type === 'inbox' || 
+      !note.frontmatter.type
+    ).length;
+  }, [notes]);
 
   return (
     <div className="sidebar-sections">

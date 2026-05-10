@@ -75,3 +75,11 @@ pub async fn update_frontmatter(path: String, frontmatter: VaultFrontmatter) -> 
     
     Ok("Frontmatter updated".to_string())
 }
+
+#[tauri::command]
+pub async fn save_note_content(path: String, content: String) -> Result<String, String> {
+    std::fs::write(&path, content)
+        .map_err(|e| format!("Failed to save note: {}", e))?;
+    
+    Ok("Note saved".to_string())
+}
