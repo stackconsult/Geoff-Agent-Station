@@ -1,5 +1,13 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::sync::Arc;
+use std::sync::Mutex;
+use notify::{Watcher, RecursiveMode, RecommendedWatcher, Event, EventKind};
+use once_cell::sync::Lazy;
+
+static FILE_WATCHER: Lazy<Arc<Mutex<Option<RecommendedWatcher>>>> = Lazy::new(|| {
+    Arc::new(Mutex::new(None))
+});
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DetectedVault {
@@ -10,7 +18,7 @@ pub struct DetectedVault {
 }
 
 #[tauri::command]
-pub fn detect_obsidian_vaults() -> Vec<DetectedVault> {
+pub async fn detect_obsidian_vaults() -> Vec<DetectedVault> {
     let mut vaults = Vec::new();
     
     // Common Obsidian vault locations on Windows
@@ -54,6 +62,52 @@ pub fn detect_obsidian_vaults() -> Vec<DetectedVault> {
     
     vaults.sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
     vaults
+}
+
+#[tauri::command]
+pub async fn start_file_watcher(
+    vault_path: String,
+    callback: String,
+) -> Result<String, String> {
+    use std::sync::mpsc::channel;
+    
+    let (tx, rx) = channel();
+    
+    let mut watcher = notify::recommended_watcher(move |res: Result<Event, notify::Error>| {
+        if let Ok(event) = res {
+            let _ = tx.send(event);
+        }
+    }).map_err(|e| format!("Failed to create watcher: {}", e))?;
+    
+    watcher.watch(std::path::Path::new(&vault_path), RecursiveMode::Recursive)
+        .map_err(|e| format!("Failed to watch path: {}", e))?;
+    
+    // Store watcher
+    let mut guard = FILE_WATCHER.lock().map_err(|e| e.to_string())?;
+    *guard = Some(watcher);
+    
+    // Spawn thread to handle events
+    let vault_path_clone = vault_path.clone();
+    std::thread::spawn(move || {
+        while let Ok(event) = rx.recv() {
+            match event.kind {
+                EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_) => {
+                    println!("File change detected in {}: {:?}", vault_path_clone, event.kind);
+                    // In production, would emit event to frontend via Tauri
+                }
+                _ => {}
+            }
+        }
+    });
+    
+    Ok(format!("Watching {}", vault_path))
+}
+
+#[tauri::command]
+pub async fn stop_file_watcher() -> Result<String, String> {
+    let mut guard = FILE_WATCHER.lock().map_err(|e| e.to_string())?;
+    *guard = None;
+    Ok("Watcher stopped".to_string())
 }
 
 fn count_markdown_files(dir: &std::path::Path) -> Result<usize, std::io::Error> {

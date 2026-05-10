@@ -47,6 +47,8 @@ pub fn run() {
             window::get_adaptive_window_config,
             // Vault detection commands
             vault_detection::detect_obsidian_vaults,
+            vault_detection::start_file_watcher,
+            vault_detection::stop_file_watcher,
             // Automation commands
             automation::commands::create_workflow,
             automation::commands::list_workflows,

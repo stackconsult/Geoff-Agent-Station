@@ -51,6 +51,19 @@ export function Editor({ currentNote, onRevealFile, onPaste, onSave }: EditorPro
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSave]);
 
+  // Auto-save with debounce (2 seconds after typing stops)
+  useEffect(() => {
+    if (!currentNote || !content) return;
+    
+    const timeoutId = setTimeout(() => {
+      if (!isSaving) {
+        handleSave();
+      }
+    }, 2000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [content, currentNote?.id]);
+
   if (!currentNote) {
     return (
       <div className="editor editor-empty">
