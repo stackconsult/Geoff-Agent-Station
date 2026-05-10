@@ -6,18 +6,41 @@ import { useAutoGit } from './hooks/useAutoGit';
 import { useVaultLoader } from './hooks/useVaultLoader';
 import { handleImagePaste } from './hooks/useImagePaste';
 
-export default function App() {
-  const [vaultPath] = useState('');
-  const [currentPath] = useState('');
-  const [notes] = useState<any[]>([]);
+interface AppState {
+  vaultPath: string;
+  notes: any[];
+  currentNote: string | null;
+  isLoading: boolean;
+  error: string | null;
+}
 
-  useVaultLoader(vaultPath);
-  useAutoGit(vaultPath);
+export default function App() {
+  const [state, setState] = useState<AppState>({
+    vaultPath: '',
+    notes: [],
+    currentNote: null,
+    isLoading: false,
+    error: null
+  });
+
+  const loadNotes = async (path: string) => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    try {
+      const { invoke } = await import('@tauri-apps/api/tauri');
+      const notes = await invoke('scan_vault', { vaultPath: path });
+      setState(prev => ({ ...prev, notes, isLoading: false }));
+    } catch (error) {
+      setState(prev => ({ ...prev, error: String(error), isLoading: false }));
+    }
+  };
+
+  useVaultLoader(state.vaultPath);
+  useAutoGit(state.vaultPath);
 
   const handleRevealFile = async () => {
-    if (currentPath) {
+    if (state.currentNote) {
       const { invoke } = await import('@tauri-apps/api/tauri');
-      await invoke('reveal_file', { path: currentPath });
+      await invoke('reveal_file', { path: state.currentNote });
     }
   };
 
@@ -31,7 +54,7 @@ export default function App() {
         if (file) {
           const data = await file.arrayBuffer();
           const filename = file.name;
-          await handleImagePaste(vaultPath, filename, new Uint8Array(data));
+          await handleImagePaste(state.vaultPath, filename, new Uint8Array(data));
         }
       }
     }
@@ -43,7 +66,7 @@ export default function App() {
         <div className="sidebar">
           <h2>Tolaria</h2>
           <SidebarSections />
-          <NoteList notes={notes} />
+          <NoteList notes={state.notes} />
         </div>
         <div className="main">
           <Editor

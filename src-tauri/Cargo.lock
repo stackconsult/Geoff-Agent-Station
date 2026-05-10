@@ -706,6 +706,7 @@ dependencies = [
  "git2",
  "md5",
  "opener",
+ "regex",
  "serde",
  "serde_json",
  "serde_yaml",
