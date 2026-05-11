@@ -138,3 +138,61 @@ impl ContextWindow {
             .collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_ingest_documentation_directory_latency_baseline() {
+        let temp_dir = std::env::temp_dir().join("test_perf_docs");
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        for i in 0..30 {
+            let content = format!("# Document {}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", i);
+            fs::write(temp_dir.join(format!("doc{}.md", i)), content).unwrap();
+        }
+
+        let start = std::time::Instant::now();
+        let mut window = ContextWindow::new(8192);
+        let result = window.ingest_documentation_directory(&temp_dir);
+        let duration = start.elapsed();
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 30);
+        eprintln!("M1 Baseline: Documentation ingestion latency for 30 files: {:?}", duration);
+
+        fs::remove_dir_all(temp_dir).unwrap();
+    }
+
+    #[test]
+    fn test_build_context_latency_baseline() {
+        let mut window = ContextWindow::new(8192);
+        for i in 0..30 {
+            let content = format!("# Document {}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", i);
+            window.add_documentation(format!("doc{}.md", i), content);
+        }
+
+        let start = std::time::Instant::now();
+        let _context = window.build_context();
+        let duration = start.elapsed();
+
+        eprintln!("M2 Baseline: Context building latency for 30 sources: {:?}", duration);
+    }
+
+    #[test]
+    fn test_search_docs_latency_baseline() {
+        let mut window = ContextWindow::new(8192);
+        for i in 0..30 {
+            let content = format!("# Document {}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", i);
+            window.add_documentation(format!("doc{}.md", i), content);
+        }
+
+        let start = std::time::Instant::now();
+        let _results = window.search_documentation("lorem");
+        let duration = start.elapsed();
+
+        eprintln!("M3 Baseline: search_docs latency for 30 sources: {:?}", duration);
+    }
+}
