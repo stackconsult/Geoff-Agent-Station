@@ -1,5 +1,3 @@
-#![allow(dead_code)] // All items are Tauri commands — registered via generate_handler! macro
-
 use opener;
 
 #[tauri::command]

@@ -32,11 +32,6 @@ jobs:
           # Tauri requires WebView2 on Windows — pre-installed on GH runners
           echo "Windows runner — WebView2 available"
 
-      - name: cargo check (zero warnings gate)
-        working-directory: src-tauri
-        run: cargo check 2>&1
-        # Note: warnings are suppressed at source, so this should be clean
-
       - name: cargo test
         working-directory: src-tauri
         run: cargo test

@@ -1,5 +1,3 @@
-#![allow(dead_code)] // Tauri commands registered via generate_handler! macro + helper functions
-
 use crate::vault::{scan_vault, VaultFrontmatter};
 use std::path::PathBuf;
 
@@ -230,12 +228,10 @@ pub async fn update_frontmatter(path: String, frontmatter: VaultFrontmatter) -> 
 
     let new_content = format!("---\n{}---\n{}", yaml, body);
 
-    // Backup before write — same safety contract as save_note_content
+    // Backup before write — write from in-memory content (avoids TOCTOU from fs::copy)
     let bak_path = make_bak_path(&path);
-    if std::path::Path::new(&path).exists() {
-        std::fs::copy(&path, &bak_path)
-            .map_err(|e| format!("Failed to create backup: {}", e))?;
-    }
+    std::fs::write(&bak_path, &content)
+        .map_err(|e| format!("Failed to create backup: {}", e))?;
 
     match std::fs::write(&path, &new_content) {
         Ok(_) => {
