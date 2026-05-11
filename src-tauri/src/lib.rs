@@ -82,6 +82,9 @@ pub fn run() {
             commands::ai::ai_clear_history,
             commands::ai::ai_get_history,
             commands::ai::ai_update_config,
+            commands::ai::ai_setup_obsidian_vault,
+            commands::ai::ai_ingest_documentation,
+            commands::ai::ai_search_docs,
             // Clipboard commands
             commands::clipboard::clipboard_get_text,
             commands::clipboard::clipboard_set_text,

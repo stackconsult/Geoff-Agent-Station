@@ -5,10 +5,10 @@ use tokio::sync::mpsc::UnboundedSender;
 use tokio::sync::Mutex;
 
 pub mod llm_client;
+pub mod context;
+use context::ContextWindow;
 #[cfg(feature = "ai-advanced")]
 pub mod prompts;
-#[cfg(feature = "ai-advanced")]
-pub mod context;
 #[cfg(feature = "ai-advanced")]
 pub mod agents;
 
@@ -53,6 +53,7 @@ pub struct AIEngine {
     config: Arc<Mutex<AIConfig>>,
     conversation_history: Arc<Mutex<Vec<Message>>>,
     rate_limiter: Arc<Mutex<RateLimiter>>,
+    context_window: Arc<Mutex<ContextWindow>>,
 }
 
 #[derive(Debug)]
@@ -97,6 +98,7 @@ impl AIEngine {
             config: Arc::new(Mutex::new(config)),
             conversation_history: Arc::new(Mutex::new(Vec::new())),
             rate_limiter: Arc::new(Mutex::new(RateLimiter::new(10, 2))), // 10 tokens, refill 2/sec
+            context_window: Arc::new(Mutex::new(ContextWindow::new(8192))),
         }
     }
 
@@ -190,6 +192,34 @@ impl AIEngine {
     pub async fn update_config(&self, new_config: AIConfig) {
         let mut config = self.config.lock().await;
         *config = new_config;
+    }
+
+    pub async fn ingest_documentation(&self, docs_path: String) -> Result<usize, String> {
+        let path = std::path::Path::new(&docs_path);
+        let mut context = self.context_window.lock().await;
+        context.ingest_documentation_directory(path)
+    }
+
+    pub async fn add_vault_context(&self, vault_path: String, note_count: usize) {
+        let mut context = self.context_window.lock().await;
+        context.add_vault(vault_path, note_count);
+    }
+
+    pub async fn search_docs(&self, query: String) -> Vec<String> {
+        let context = self.context_window.lock().await;
+        let results = context.search_documentation(&query);
+        results
+            .into_iter()
+            .map(|source| {
+                let metadata = source
+                    .metadata
+                    .as_ref()
+                    .and_then(|m| m.get("path"))
+                    .and_then(|p| p.as_str())
+                    .unwrap_or("unknown");
+                format!("{}: {}", metadata, source.content.lines().next().unwrap_or(""))
+            })
+            .collect()
     }
 }
 

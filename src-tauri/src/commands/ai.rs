@@ -7,6 +7,37 @@ use tokio::sync::Mutex;
 static AI_ENGINE: Lazy<Arc<Mutex<Option<AIEngine>>>> = Lazy::new(|| Arc::new(Mutex::new(None)));
 
 #[tauri::command]
+pub async fn ai_setup_obsidian_vault(vault_path: String, note_count: usize) -> Result<(), String> {
+    let guard = AI_ENGINE.lock().await;
+    if let Some(engine) = guard.as_ref() {
+        engine.add_vault_context(vault_path, note_count).await;
+        Ok(())
+    } else {
+        Err("AI engine not initialized. Call ai_initialize first.".to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn ai_ingest_documentation(docs_path: String) -> Result<usize, String> {
+    let guard = AI_ENGINE.lock().await;
+    if let Some(engine) = guard.as_ref() {
+        engine.ingest_documentation(docs_path).await
+    } else {
+        Err("AI engine not initialized. Call ai_initialize first.".to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn ai_search_docs(query: String) -> Result<Vec<String>, String> {
+    let guard = AI_ENGINE.lock().await;
+    if let Some(engine) = guard.as_ref() {
+        Ok(engine.search_docs(query).await)
+    } else {
+        Err("AI engine not initialized. Call ai_initialize first.".to_string())
+    }
+}
+
+#[tauri::command]
 pub async fn ai_initialize(config: AIConfig) -> Result<(), String> {
     let engine = AIEngine::new(config);
     let mut global_engine: tokio::sync::MutexGuard<'_, Option<AIEngine>> = AI_ENGINE.lock().await;
