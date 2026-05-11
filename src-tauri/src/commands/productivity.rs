@@ -1,3 +1,5 @@
+#![allow(dead_code)] // All items are Tauri commands — registered via generate_handler! macro
+
 use crate::productivity::{ProductivityManager, ProductivityStats, PomodoroSession};
 use chrono::{DateTime, Utc};
 use once_cell::sync::Lazy;

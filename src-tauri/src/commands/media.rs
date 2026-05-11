@@ -1,3 +1,5 @@
+#![allow(dead_code)] // All items are Tauri commands — registered via generate_handler! macro
+
 use std::fs;
 use std::path::PathBuf;
 

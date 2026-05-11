@@ -1,3 +1,5 @@
+#![allow(dead_code)] // Tauri commands registered via generate_handler! macro + helper functions
+
 use crate::vault::{scan_vault, VaultFrontmatter};
 
 /// Strips the leading `---\n...\n---\n` frontmatter block from a markdown string.
@@ -39,6 +41,48 @@ mod tests {
         let once = strip_frontmatter(input);
         let twice = strip_frontmatter(once);
         assert_eq!(once, twice, "stripping twice must equal stripping once");
+    }
+
+    #[tokio::test]
+    async fn test_save_note_content_creates_and_cleans_backup() {
+        let dir = std::env::temp_dir().join("tolaria_test_save");
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("test_note.md");
+        let bak_path = format!("{}.bak", path.display());
+
+        // Write initial content
+        std::fs::write(&path, "original content").unwrap();
+
+        // Save new content via our function
+        let result = save_note_content(path.display().to_string(), "updated content".to_string()).await;
+        assert!(result.is_ok(), "save should succeed");
+
+        // File should have new content
+        let content = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(content, "updated content");
+
+        // Backup should be cleaned up on success
+        assert!(!std::path::Path::new(&bak_path).exists(), ".bak should be removed after successful save");
+
+        // Cleanup
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_save_note_content_new_file_no_backup_needed() {
+        let dir = std::env::temp_dir().join("tolaria_test_save_new");
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("brand_new.md");
+
+        // File doesn't exist yet — should still work
+        let result = save_note_content(path.display().to_string(), "fresh content".to_string()).await;
+        assert!(result.is_ok(), "save of new file should succeed");
+
+        let content = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(content, "fresh content");
+
+        // Cleanup
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
 
@@ -126,8 +170,28 @@ pub async fn update_frontmatter(path: String, frontmatter: VaultFrontmatter) -> 
 
 #[tauri::command]
 pub async fn save_note_content(path: String, content: String) -> Result<String, String> {
-    std::fs::write(&path, content)
-        .map_err(|e| format!("Failed to save note: {}", e))?;
-    
-    Ok("Note saved".to_string())
+    let bak_path = format!("{}.bak", &path);
+
+    // Create backup of existing file (if it exists) before overwriting
+    if std::path::Path::new(&path).exists() {
+        std::fs::copy(&path, &bak_path)
+            .map_err(|e| format!("Failed to create backup: {}", e))?;
+    }
+
+    // Attempt the write
+    match std::fs::write(&path, &content) {
+        Ok(_) => {
+            // Success — remove backup
+            let _ = std::fs::remove_file(&bak_path);
+            Ok("Note saved".to_string())
+        }
+        Err(e) => {
+            // Write failed — attempt restore from backup
+            if std::path::Path::new(&bak_path).exists() {
+                let _ = std::fs::copy(&bak_path, &path);
+                let _ = std::fs::remove_file(&bak_path);
+            }
+            Err(format!("Failed to save note: {}", e))
+        }
+    }
 }

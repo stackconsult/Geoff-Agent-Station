@@ -1,3 +1,5 @@
+#![allow(dead_code)] // All items are Tauri commands — registered via generate_handler! macro
+
 use crate::ai::{AIEngine, AIConfig, Message};
 use once_cell::sync::Lazy;
 use std::sync::Arc;
