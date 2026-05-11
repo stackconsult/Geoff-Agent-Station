@@ -1,5 +1,47 @@
 use crate::vault::{scan_vault, VaultFrontmatter};
 
+/// Strips the leading `---\n...\n---\n` frontmatter block from a markdown string.
+/// Returns the body content after the closing `---`.
+pub fn strip_frontmatter(content: &str) -> &str {
+    if !content.starts_with("---") {
+        return content;
+    }
+    let after_open = &content[3..];
+    if let Some(close_pos) = after_open.find("\n---") {
+        // "\n---" is 4 bytes; the trailing newline after "---" is 1 more = 5 total
+        let skip = 3 + close_pos + 5;
+        content.get(skip..).unwrap_or(content)
+    } else {
+        content
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_strip_frontmatter_removes_existing_block() {
+        let input = "---\ntitle: Test\n---\n# Body\n\nContent here.\n";
+        let result = strip_frontmatter(input);
+        assert_eq!(result, "# Body\n\nContent here.\n");
+    }
+
+    #[test]
+    fn test_strip_frontmatter_no_frontmatter_unchanged() {
+        let input = "# Just a note\n\nNo frontmatter.\n";
+        assert_eq!(strip_frontmatter(input), input);
+    }
+
+    #[test]
+    fn test_strip_frontmatter_idempotent() {
+        let input = "---\ntitle: Test\n---\n# Body\n";
+        let once = strip_frontmatter(input);
+        let twice = strip_frontmatter(once);
+        assert_eq!(once, twice, "stripping twice must equal stripping once");
+    }
+}
+
 #[tauri::command]
 pub async fn search_notes(vault_path: String, query: String) -> Result<Vec<String>, String> {
     if query.is_empty() {
@@ -67,15 +109,18 @@ pub async fn load_note_content(path: String) -> Result<String, String> {
 pub async fn update_frontmatter(path: String, frontmatter: VaultFrontmatter) -> Result<String, String> {
     let content = std::fs::read_to_string(&path)
         .map_err(|e| format!("Failed to read file: {}", e))?;
-    
+
+    // Strip existing frontmatter before prepending new one — prevents duplicate blocks.
+    let body = strip_frontmatter(&content).to_string();
+
     let yaml = serde_yaml::to_string(&frontmatter)
         .map_err(|e| format!("Failed to serialize frontmatter: {}", e))?;
-    
-    let new_content = format!("---\n{}---\n{}", yaml, content);
-    
+
+    let new_content = format!("---\n{}---\n{}", yaml, body);
+
     std::fs::write(&path, new_content)
         .map_err(|e| format!("Failed to write file: {}", e))?;
-    
+
     Ok("Frontmatter updated".to_string())
 }
 
