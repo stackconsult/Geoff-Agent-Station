@@ -7,9 +7,9 @@ mod window;
 mod vault_detection;
 pub mod validation;
 mod automation;
-mod ai;
-mod clipboard;
-mod productivity;
+pub mod ai;
+pub mod clipboard;
+pub mod productivity;
 
 // Commands module - must be declared before use
 mod commands;

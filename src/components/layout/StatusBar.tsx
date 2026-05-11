@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/Button'
-import { GitBranch, Check, AlertCircle, RefreshCw, FolderOpen, Settings, GitMerge } from 'lucide-react'
+import { GitBranch, Check, AlertCircle, RefreshCw, FolderOpen, Settings, GitMerge, Zap } from 'lucide-react'
 import type { SyncStatus } from '../../types'
 
 interface StatusBarProps {
@@ -15,6 +15,7 @@ interface StatusBarProps {
   onSync?: () => void
   onOpenVault?: () => void
   onOpenSettings?: () => void
+  onToggleAutomation?: () => void
   className?: string
 }
 
@@ -59,6 +60,7 @@ export function StatusBar({
   onSync,
   onOpenVault,
   onOpenSettings,
+  onToggleAutomation,
   className,
 }: StatusBarProps) {
   useStatusBarTicker()
@@ -121,6 +123,11 @@ export function StatusBar({
           <FolderOpen className="h-3 w-3 flex-shrink-0" />
           <span className="truncate">{vaultLabel}</span>
         </Button>
+        {onToggleAutomation && (
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onToggleAutomation} title="Automation">
+            <Zap className="h-3 w-3" />
+          </Button>
+        )}
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onOpenSettings}>
           <Settings className="h-3 w-3" />
         </Button>

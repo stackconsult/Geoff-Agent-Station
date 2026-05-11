@@ -19,17 +19,20 @@ pub async fn search_notes(vault_path: String, query: String) -> Result<Vec<Strin
             score += 10.0;
         }
 
+        // Snippet match
+        if entry.snippet.to_lowercase().contains(&query_lower) {
+            score += 5.0;
+        }
+
         // Tag match
-        if let Some(tags) = &entry.frontmatter.tags {
-            for tag in tags {
-                if tag.to_lowercase().contains(&query_lower) {
-                    score += 5.0;
-                }
+        for tag in &entry.aliases {
+            if tag.to_lowercase().contains(&query_lower) {
+                score += 5.0;
             }
         }
 
         // Link match
-        for link in &entry.links {
+        for link in &entry.outgoing_links {
             if link.to_lowercase().contains(&query_lower) {
                 score += 3.0;
             }
@@ -43,7 +46,7 @@ pub async fn search_notes(vault_path: String, query: String) -> Result<Vec<Strin
         }
 
         if score > 0.0 {
-            scored_results.push((entry.id, score));
+            scored_results.push((entry.path.clone(), score));
         }
     }
 

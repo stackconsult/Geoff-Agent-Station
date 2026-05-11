@@ -9,6 +9,8 @@ import {
   Save,
   Loader2,
 } from 'lucide-react';
+import { RichEditorView } from '../editor/RichEditorView';
+import { RawEditorView } from '../editor/RawEditorView';
 
 interface EditorNote {
   id: string;
@@ -140,27 +142,22 @@ export function Editor({
           />
         </div>
 
-        {/* Content Textarea - ACTUAL FUNCTIONAL EDITOR */}
+        {/* Editor Content - Rich or Raw mode */}
         <div className="flex-1 px-4 pb-4 overflow-hidden">
           {note.isLoading ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-8 w-8 text-[var(--color-accent-primary)] animate-spin" />
               <span className="ml-2 text-[var(--color-text-secondary)]">Loading note...</span>
             </div>
+          ) : mode === 'rich' ? (
+            <RichEditorView
+              content={note.content}
+              onChange={onContentChange}
+            />
           ) : (
-            <textarea
-              value={note.content}
-              onChange={handleContentChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Start writing..."
-              className={cn(
-                "w-full h-full resize-none bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)]",
-                "px-4 py-3 text-[var(--color-text-primary)] text-base leading-relaxed",
-                "placeholder:text-[var(--color-text-muted)]",
-                "focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-primary)] focus:border-transparent",
-                "font-mono" // Monospace for raw markdown editing
-              )}
-              spellCheck={false}
+            <RawEditorView
+              content={note.content}
+              onChange={onContentChange}
             />
           )}
         </div>

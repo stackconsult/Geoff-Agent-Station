@@ -8,6 +8,7 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 import { VaultSelector } from './components/VaultSelector';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { AppLayout, Sidebar, NoteList, Editor, AiPanel, StatusBar } from './components/layout';
+import { AutomationDashboard } from './pages/AutomationDashboard';
 
 const VAULT_PATH_KEY = 'tolaria_vault_path';
 
@@ -39,6 +40,7 @@ export default function App() {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   // SidebarSelection — real Tolaria union type
   const [sidebarSelection, setSidebarSelection] = useState<SidebarSelection>({ kind: 'filter', filter: 'inbox' });
+  const [showAutomation, setShowAutomation] = useState(false);
 
   const DEFAULT_VAULT_PATH = 'C:\\Users\\Geoff Parsons\\Desktop\\tolaria-automation\\vault';
 
@@ -174,7 +176,9 @@ export default function App() {
       <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
         {state.isLoading && <LoadingSpinner />}
         {state.error && <ErrorDisplay error={state.error} onDismiss={handleDismissError} />}
-        
+        {showAutomation ? (
+          <AutomationDashboard />
+        ) : (
         <AppLayout
           sidebar={
             <Sidebar
@@ -219,9 +223,11 @@ export default function App() {
               onSync={handleSaveNote}
               onOpenVault={handleChangeVault}
               onOpenSettings={() => console.log('TODO: settings')}
+              onToggleAutomation={() => setShowAutomation(!showAutomation)}
             />
           }
         />
+        )}
       </div>
     </ErrorBoundary>
   );
