@@ -1,4 +1,8 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+// Note: Rust's dead code analysis doesn't recognize Tauri's macro-based command registration.
+// All commands below are registered via generate_handler! macro and are callable from frontend.
+#![allow(dead_code)]
+
 mod vault;
 mod git;
 mod mcp;
