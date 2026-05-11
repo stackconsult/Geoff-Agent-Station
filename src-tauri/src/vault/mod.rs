@@ -172,132 +172,178 @@ pub async fn scan_vault(vault_path: String) -> Result<Vec<VaultEntry>, String> {
         return Ok(cached_entries);
     }
 
-    let mut entries = Vec::new();
+    let vault_path_clone = vault_path.clone();
+    let entries = tokio::task::spawn_blocking(move || {
+        let mut entries = Vec::new();
+        for entry in WalkDir::new(&vault_path_clone)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().extension().and_then(|ext| ext.to_str()) == Some("md"))
+        {
+            let path = entry.path();
+            
+            // Read file content
+            let content = fs::read_to_string(path)
+                .map_err(|e| format!("Failed to read file {:?}: {}", path, e))?;
+            
+            // Parse frontmatter
+            let (frontmatter, _) = parse_frontmatter(&content);
+            
+            // Extract links
+            let links = extract_links(&content);
+            
+            // Create entry
+            let path_str = path.to_string_lossy().to_string();
+            let filename = path.file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("unknown")
+                .to_string();
 
-    // Walk the vault directory for .md files
-    for entry in WalkDir::new(&vault_path)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().and_then(|ext| ext.to_str()) == Some("md"))
-    {
-        let path = entry.path();
-        
-        // Read file content
-        let content = fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read file {:?}: {}", path, e))?;
-        
-        // Parse frontmatter
-        let (frontmatter, _) = parse_frontmatter(&content);
-        
-        // Extract links
-        let links = extract_links(&content);
-        
-        // Create entry
-        let path_str = path.to_string_lossy().to_string();
-        let filename = path.file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("unknown")
-            .to_string();
+            // Extract body (skip frontmatter)
+            let body = if content.starts_with("---") {
+                content.lines()
+                    .skip_while(|line| *line != "---")
+                    .skip(1)
+                    .skip_while(|line| *line != "---")
+                    .skip(1)
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            } else {
+                content.clone()
+            };
 
-        // Extract body (skip frontmatter)
-        let body = if content.starts_with("---") {
-            content.lines()
-                .skip_while(|line| *line != "---")
-                .skip(1)
-                .skip_while(|line| *line != "---")
-                .skip(1)
+            // Generate snippet (first 150 chars of body, no markdown)
+            let snippet = body
+                .lines()
+                .filter(|line| !line.trim().is_empty())
                 .collect::<Vec<_>>()
-                .join("\n")
-        } else {
-            content.clone()
-        };
+                .join(" ")
+                .chars()
+                .take(150)
+                .collect::<String>();
 
-        // Generate snippet (first 150 chars of body, no markdown)
-        let snippet = body
-            .lines()
-            .filter(|line| !line.trim().is_empty())
-            .collect::<Vec<_>>()
-            .join(" ")
-            .chars()
-            .take(150)
-            .collect::<String>();
+            // Word count
+            let word_count = body.split_whitespace().count();
 
-        // Word count
-        let word_count = body.split_whitespace().count();
+            // Check for H1
+            let has_h1 = body.lines()
+                .find(|line| !line.trim().is_empty())
+                .map(|line| line.trim().starts_with("# "))
+                .unwrap_or(false);
 
-        // Check for H1
-        let has_h1 = body.lines()
-            .find(|line| !line.trim().is_empty())
-            .map(|line| line.trim().starts_with("# "))
-            .unwrap_or(false);
+            // File metadata
+            let metadata = fs::metadata(path).ok();
+            let file_size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
+            let modified_at = metadata
+                .as_ref()
+                .and_then(|m| m.modified().ok())
+                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|d| d.as_secs() as i64);
+            let created_at = metadata
+                .and_then(|m| m.created().ok())
+                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|d| d.as_secs() as i64);
 
-        // File metadata
-        let metadata = fs::metadata(path).ok();
-        let file_size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
-        let modified_at = metadata
-            .as_ref()
-            .and_then(|m| m.modified().ok())
-            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-            .map(|d| d.as_secs() as i64);
-        let created_at = metadata
-            .and_then(|m| m.created().ok())
-            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-            .map(|d| d.as_secs() as i64);
+            // Build properties map from frontmatter.extra
+            let mut properties = std::collections::HashMap::new();
+            for (key, value) in frontmatter.extra.iter() {
+                properties.insert(key.clone(), value.clone());
+            }
 
-        // Build properties map from frontmatter.extra
-        let mut properties = std::collections::HashMap::new();
-        for (key, value) in frontmatter.extra.iter() {
-            properties.insert(key.clone(), value.clone());
+            // Build relationships map
+            let mut relationships = std::collections::HashMap::new();
+            if let Some(belongs_to) = &frontmatter.belongs_to {
+                relationships.insert("belongsTo".to_string(), belongs_to.clone());
+            }
+            if let Some(related_to) = &frontmatter.related_to {
+                relationships.insert("relatedTo".to_string(), related_to.clone());
+            }
+
+            let entry = VaultEntry {
+                path: path_str,
+                filename: filename.clone(),
+                title: filename,
+                is_a: frontmatter.r#type.clone(),
+                snippet,
+                word_count,
+                has_h1,
+                modified_at,
+                created_at,
+                file_size,
+                file_kind: "markdown".to_string(),
+                archived: frontmatter.archived.unwrap_or(false),
+                organized: frontmatter.organized.unwrap_or(false),
+                favorite: frontmatter.favorite.unwrap_or(false),
+                visible: frontmatter.visible,
+                aliases: frontmatter.aliases.clone().unwrap_or_default(),
+                belongs_to: frontmatter.belongs_to.clone().unwrap_or_default(),
+                related_to: frontmatter.related_to.clone().unwrap_or_default(),
+                outgoing_links: links,
+                relationships,
+                status: frontmatter.status.clone(),
+                icon: frontmatter.icon.clone(),
+                color: frontmatter.color.clone(),
+                order: frontmatter.order,
+                sidebar_label: None,
+                favorite_index: None,
+                template: None,
+                sort: None,
+                view: None,
+                list_properties_display: Vec::new(),
+                properties,
+            };
+            
+            entries.push(entry);
         }
-
-        // Build relationships map
-        let mut relationships = std::collections::HashMap::new();
-        if let Some(belongs_to) = &frontmatter.belongs_to {
-            relationships.insert("belongsTo".to_string(), belongs_to.clone());
-        }
-        if let Some(related_to) = &frontmatter.related_to {
-            relationships.insert("relatedTo".to_string(), related_to.clone());
-        }
-
-        let entry = VaultEntry {
-            path: path_str,
-            filename: filename.clone(),
-            title: filename,
-            is_a: frontmatter.r#type.clone(),
-            snippet,
-            word_count,
-            has_h1,
-            modified_at,
-            created_at,
-            file_size,
-            file_kind: "markdown".to_string(),
-            archived: frontmatter.archived.unwrap_or(false),
-            organized: frontmatter.organized.unwrap_or(false),
-            favorite: frontmatter.favorite.unwrap_or(false),
-            visible: frontmatter.visible,
-            aliases: frontmatter.aliases.clone().unwrap_or_default(),
-            belongs_to: frontmatter.belongs_to.clone().unwrap_or_default(),
-            related_to: frontmatter.related_to.clone().unwrap_or_default(),
-            outgoing_links: links,
-            relationships,
-            status: frontmatter.status.clone(),
-            icon: frontmatter.icon.clone(),
-            color: frontmatter.color.clone(),
-            order: frontmatter.order,
-            sidebar_label: None,
-            favorite_index: None,
-            template: None,
-            sort: None,
-            view: None,
-            list_properties_display: Vec::new(),
-            properties,
-        };
-        
-        entries.push(entry);
-    }
+        Ok::<Vec<VaultEntry>, String>(entries)
+    })
+    .await
+    .map_err(|e| format!("scan task panicked: {}", e))??;
 
     // Write to cache
     write_cache(&cache_path, &entries).await;
 
     Ok(entries)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_scan_vault_empty_dir_returns_empty_vec() {
+        let dir = std::env::temp_dir().join("tolaria_scan_empty");
+        let _ = std::fs::create_dir_all(&dir);
+        let result = scan_vault(dir.display().to_string()).await;
+        assert!(result.is_ok(), "empty vault should not error");
+        assert_eq!(result.unwrap().len(), 0, "empty vault should return 0 entries");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_scan_vault_finds_md_files() {
+        let dir = std::env::temp_dir().join("tolaria_scan_md");
+        let _ = std::fs::create_dir_all(&dir);
+        std::fs::write(dir.join("note.md"), "# Hello\n\nContent here.").unwrap();
+        std::fs::write(dir.join("ignore.txt"), "not markdown").unwrap();
+        let result = scan_vault(dir.display().to_string()).await.unwrap();
+        assert_eq!(result.len(), 1, "should find exactly 1 .md file");
+        assert_eq!(result[0].filename, "note");
+        assert!(result[0].snippet.contains("Content"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_scan_vault_parses_frontmatter_fields() {
+        let dir = std::env::temp_dir().join("tolaria_scan_fm");
+        let _ = std::fs::create_dir_all(&dir);
+        std::fs::write(
+            dir.join("tagged.md"),
+            "---\nfavorite: true\n---\n# My Note\n",
+        ).unwrap();
+        let result = scan_vault(dir.display().to_string()).await.unwrap();
+        assert_eq!(result.len(), 1);
+        assert!(result[0].favorite, "favorite field should be parsed from frontmatter");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
