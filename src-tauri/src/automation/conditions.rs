@@ -122,7 +122,7 @@ impl Condition {
                 Ok(true)
             },
             
-            Condition::BatteryLevel { operator, percentage } => {
+            Condition::BatteryLevel { operator: _operator, percentage: _percentage } => {
                 // Placeholder - would need platform-specific implementation
                 Ok(true)
             },
@@ -134,7 +134,7 @@ impl Condition {
                 }
             },
             
-            Condition::Custom { expression } => {
+            Condition::Custom { expression: _expression } => {
                 // Placeholder for custom expression evaluation
                 Err("Custom expressions not yet implemented".to_string())
             },

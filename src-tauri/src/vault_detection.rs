@@ -67,7 +67,7 @@ pub async fn detect_obsidian_vaults() -> Vec<DetectedVault> {
 #[tauri::command]
 pub async fn start_file_watcher(
     vault_path: String,
-    callback: String,
+    _callback: String,
 ) -> Result<String, String> {
     use std::sync::mpsc::channel;
     

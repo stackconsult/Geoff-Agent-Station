@@ -47,6 +47,7 @@ impl AutomationEngine {
         Ok(workflows.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
     }
 
+    #[allow(dead_code)] // Scaffolding — will be wired to Tauri command
     pub async fn execute_workflow(&self, id: &str) -> Result<String, String> {
         let workflow = self.get_workflow(id)?;
         workflow.execute().await

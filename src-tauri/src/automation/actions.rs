@@ -117,7 +117,7 @@ impl Action {
                 Ok("File written successfully".to_string())
             },
             
-            Action::HttpRequest { url, method, headers, body } => {
+            Action::HttpRequest { url, method, headers: _headers, body: _body } => {
                 // Placeholder for HTTP request implementation
                 Ok(format!("HTTP {:?} request to {}", method, url))
             },

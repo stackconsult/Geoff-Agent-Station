@@ -1,5 +1,3 @@
-use super::TimeEntry;
-
 pub fn categorize_app(app_name: &str) -> &str {
     match app_name.to_lowercase().as_str() {
         name if name.contains("code") || name.contains("visual studio") => "development",

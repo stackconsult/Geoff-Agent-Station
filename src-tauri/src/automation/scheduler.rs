@@ -73,6 +73,7 @@ impl Scheduler {
         Ok(tasks.values().cloned().collect())
     }
 
+    #[allow(dead_code)] // Scaffolding — used by tests, will be wired to Tauri command
     pub fn get_task(&self, id: &str) -> Result<ScheduledTask, String> {
         let tasks = self.tasks.lock().map_err(|e| e.to_string())?;
         tasks.get(id).cloned().ok_or("Task not found".to_string())
