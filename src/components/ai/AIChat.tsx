@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 
 interface Message {
   role: string;
@@ -76,20 +77,65 @@ export function AIChat() {
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
+    const sentInput = input;
     setInput('');
     setIsLoading(true);
 
     try {
-      const response = await invoke<string>('ai_chat', { message: input });
-      const assistantMessage: Message = { role: 'assistant', content: response };
-      setMessages((prev) => [...prev, assistantMessage]);
+      // Try streaming first; fall back to non-streaming on error
+      let streamingWorked = false;
+      const streamingIndex = { value: -1 };
+
+      const unlistenChunk = await listen<string>('ai-stream-chunk', (event) => {
+        if (streamingIndex.value === -1) {
+          streamingIndex.value = 0;
+          setMessages((prev) => [...prev, { role: 'assistant', content: event.payload }]);
+        } else {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last?.role === 'assistant') {
+              updated[updated.length - 1] = { ...last, content: last.content + event.payload };
+            }
+            return updated;
+          });
+        }
+        streamingWorked = true;
+      });
+
+      const unlistenDone = await listen('ai-stream-done', () => {
+        setIsLoading(false);
+        unlistenChunk();
+        unlistenDone();
+      });
+
+      const unlistenError = await listen<string>('ai-stream-error', async (event) => {
+        unlistenChunk();
+        unlistenDone();
+        unlistenError();
+        if (!streamingWorked) {
+          // Fallback to non-streaming
+          try {
+            const response = await invoke<string>('ai_chat', { message: sentInput });
+            setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
+          } catch (fallbackErr) {
+            setMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${fallbackErr}` }]);
+          }
+        } else {
+          setMessages((prev) => [...prev, { role: 'assistant', content: `Stream error: ${event.payload}` }]);
+        }
+        setIsLoading(false);
+      });
+
+      await invoke('ai_chat_stream', { message: sentInput });
     } catch (error) {
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: `Error: ${error}`,
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
+      // Streaming command itself failed — fall back to non-streaming
+      try {
+        const response = await invoke<string>('ai_chat', { message: sentInput });
+        setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
+      } catch (fallbackErr) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${fallbackErr}` }]);
+      }
       setIsLoading(false);
     }
   }, [input, isLoading]);

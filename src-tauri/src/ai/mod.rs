@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Instant;
+use tokio::sync::mpsc::UnboundedSender;
 use tokio::sync::Mutex;
 
 pub mod llm_client;
@@ -136,6 +137,44 @@ impl AIEngine {
         });
 
         Ok(response)
+    }
+
+    pub async fn chat_stream(
+        &self,
+        user_message: String,
+        chunk_sender: UnboundedSender<String>,
+    ) -> Result<(), String> {
+        let mut limiter = self.rate_limiter.lock().await;
+        if !limiter.try_acquire() {
+            return Err("Rate limit exceeded. Please wait before making another request.".to_string());
+        }
+        drop(limiter);
+
+        let config = self.config.lock().await;
+        let mut history = self.conversation_history.lock().await;
+
+        history.push(Message {
+            role: "user".to_string(),
+            content: user_message.clone(),
+        });
+
+        match &config.provider {
+            LLMProvider::Ollama { model, base_url } => {
+                llm_client::ollama_chat_stream(
+                    base_url,
+                    model,
+                    &history,
+                    config.temperature,
+                    chunk_sender,
+                )
+                .await?;
+            }
+            _ => {
+                return Err("Streaming only supported for Ollama provider".to_string());
+            }
+        }
+
+        Ok(())
     }
 
     pub async fn clear_history(&self) {

@@ -78,6 +78,7 @@ pub fn run() {
             // AI commands
             commands::ai::ai_initialize,
             commands::ai::ai_chat,
+            commands::ai::ai_chat_stream,
             commands::ai::ai_clear_history,
             commands::ai::ai_get_history,
             commands::ai::ai_update_config,
