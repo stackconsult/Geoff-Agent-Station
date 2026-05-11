@@ -21,6 +21,15 @@ fn greet(name: &str) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Initialize tracing subscriber
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::from_default_env()
+                .add_directive(tracing::Level::DEBUG.into())
+                .add_directive(tracing::metadata::LevelFilter::INFO.into()),
+        )
+        .init();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -43,6 +52,9 @@ pub fn run() {
             commands::vault::load_note_content,
             commands::vault::save_note_content,
             commands::vault::update_frontmatter,
+            commands::vault::list_backup_files,
+            commands::vault::restore_from_backup,
+            commands::vault::health_check,
             // System commands
             system::get_machine_specs,
             system::get_performance_tier,

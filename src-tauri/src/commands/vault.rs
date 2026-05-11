@@ -1,5 +1,119 @@
 use crate::vault::{scan_vault, VaultFrontmatter};
 use std::path::PathBuf;
+use std::fs;
+use walkdir::WalkDir;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct BackupFile {
+    pub path: String,
+    pub original_path: String,
+    pub size: u64,
+    pub modified: i64,
+}
+
+#[tauri::command]
+pub fn list_backup_files(vault_path: String) -> Result<Vec<BackupFile>, String> {
+    let mut backups = Vec::new();
+    
+    for entry in WalkDir::new(&vault_path)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().and_then(|ext| ext.to_str()) == Some("bak"))
+    {
+        let path = entry.path();
+        
+        // Get original path by replacing .bak with original extension
+        let original_path = if let Some(stem) = path.file_stem() {
+            // Check if stem ends with .bak or is the original name
+            let stem_str = stem.to_string_lossy();
+            let parent = path.parent().unwrap_or_else(|| std::path::Path::new("."));
+            
+            // Try common extensions
+            let mut possible_originals = vec![".md", ".txt", ".json"];
+            possible_originals.push(""); // no extension
+            
+            let found = possible_originals.into_iter()
+                .find(|ext| {
+                    let test_path = parent.join(format!("{}{}", stem_str, ext));
+                    test_path.exists()
+                });
+            
+            found.map(|ext| parent.join(format!("{}{}", stem_str, ext)))
+                .unwrap_or_else(|| path.to_path_buf())
+        } else {
+            path.to_path_buf()
+        };
+        
+        let metadata = fs::metadata(path)
+            .map_err(|e| format!("Failed to read metadata: {}", e))?;
+        
+        let modified = metadata.modified()
+            .ok()
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+        
+        backups.push(BackupFile {
+            path: path.display().to_string(),
+            original_path: original_path.display().to_string(),
+            size: metadata.len(),
+            modified,
+        });
+    }
+    
+    // Sort by modified time (newest first)
+    backups.sort_by(|a, b| b.modified.cmp(&a.modified));
+    
+    Ok(backups)
+}
+
+#[tauri::command]
+pub fn restore_from_backup(backup_path: String, original_path: String) -> Result<(), String> {
+    let backup_content = fs::read_to_string(&backup_path)
+        .map_err(|e| format!("Failed to read backup: {}", e))?;
+    
+    fs::write(&original_path, &backup_content)
+        .map_err(|e| format!("Failed to restore: {}", e))?;
+    
+    // Optionally remove the backup after successful restore
+    let _ = fs::remove_file(&backup_path);
+    
+    Ok(())
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct HealthCheckResult {
+    pub vault_accessible: bool,
+    pub vault_path: String,
+    pub disk_space_gb: f64,
+    pub ollama_reachable: bool,
+}
+
+#[tauri::command]
+pub fn health_check(vault_path: String) -> Result<HealthCheckResult, String> {
+    use std::path::Path;
+    
+    // Check vault accessibility
+    let vault_accessible = Path::new(&vault_path).exists();
+    
+    // Check disk space
+    let disk_space_gb = if let Ok(_metadata) = fs::metadata(&vault_path) {
+        // This is a simplified check - in production you'd want actual disk space
+        100.0 // Placeholder - would use sysinfo for real disk space
+    } else {
+        0.0
+    };
+    
+    // Check Ollama reachability (simplified - would use reqwest in production)
+    let ollama_reachable = true; // Placeholder - would ping localhost:11434
+    
+    Ok(HealthCheckResult {
+        vault_accessible,
+        vault_path,
+        disk_space_gb,
+        ollama_reachable,
+    })
+}
 
 /// Strips the leading `---\n...\n---\n` frontmatter block from a markdown string.
 /// Returns the body content after the closing `---`.
@@ -20,6 +134,76 @@ pub fn strip_frontmatter(content: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn test_list_backup_files_empty_dir() {
+        let dir = std::env::temp_dir().join("tolaria_test_backup_list_empty");
+        let _ = std::fs::create_dir_all(&dir);
+
+        let result = list_backup_files(dir.display().to_string());
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_empty());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_list_backup_files_finds_bak() {
+        let dir = std::env::temp_dir().join("tolaria_test_backup_list");
+        let _ = std::fs::create_dir_all(&dir);
+        let bak_path = dir.join("test.md.bak");
+        std::fs::write(&bak_path, "backup content").unwrap();
+
+        let result = list_backup_files(dir.display().to_string());
+        assert!(result.is_ok());
+        let backups = result.unwrap();
+        assert_eq!(backups.len(), 1);
+        assert!(backups[0].path.ends_with("test.md.bak"));
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_restore_from_backup() {
+        let dir = std::env::temp_dir().join("tolaria_test_restore");
+        let _ = std::fs::create_dir_all(&dir);
+        let bak_path = dir.join("restore_test.md.bak");
+        let original_path = dir.join("restore_test.md");
+        std::fs::write(&bak_path, "restored content").unwrap();
+
+        let result = restore_from_backup(bak_path.display().to_string(), original_path.display().to_string());
+        assert!(result.is_ok());
+
+        let content = std::fs::read_to_string(&original_path).unwrap();
+        assert_eq!(content, "restored content");
+        assert!(!bak_path.exists(), "backup should be removed after restore");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_health_check_vault_exists() {
+        let dir = std::env::temp_dir().join("tolaria_test_health");
+        let _ = std::fs::create_dir_all(&dir);
+
+        let result = health_check(dir.display().to_string());
+        assert!(result.is_ok());
+        let health = result.unwrap();
+        assert!(health.vault_accessible);
+        assert_eq!(health.vault_path, dir.display().to_string());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_health_check_vault_not_exists() {
+        let non_existent = "/this/path/does/not/exist";
+
+        let result = health_check(non_existent.to_string());
+        assert!(result.is_ok());
+        let health = result.unwrap();
+        assert!(!health.vault_accessible);
+    }
 
     #[test]
     fn test_strip_frontmatter_removes_existing_block() {
@@ -44,7 +228,6 @@ mod tests {
 
     #[test]
     fn test_make_bak_path_replaces_extension() {
-        // "test.note.md" → "test.note.bak" (not "test.note.md.bak")
         assert!(make_bak_path("notes/test.note.md").ends_with("test.note.bak"));
         assert!(!make_bak_path("notes/test.note.md").contains(".md"));
     }
@@ -61,21 +244,16 @@ mod tests {
         let path = dir.join("test_note.md");
         let bak_path = make_bak_path(&path.display().to_string());
 
-        // Write initial content
         std::fs::write(&path, "original content").unwrap();
 
-        // Save new content via our function
         let result = save_note_content(path.display().to_string(), "updated content".to_string()).await;
         assert!(result.is_ok(), "save should succeed");
 
-        // File should have new content
         let content = std::fs::read_to_string(&path).unwrap();
         assert_eq!(content, "updated content");
 
-        // Backup should be cleaned up on success
         assert!(!std::path::Path::new(&bak_path).exists(), ".bak should be removed after successful save");
 
-        // Cleanup
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -85,14 +263,12 @@ mod tests {
         let _ = std::fs::create_dir_all(&dir);
         let path = dir.join("brand_new.md");
 
-        // File doesn't exist yet — should still work
         let result = save_note_content(path.display().to_string(), "fresh content".to_string()).await;
         assert!(result.is_ok(), "save of new file should succeed");
 
         let content = std::fs::read_to_string(&path).unwrap();
         assert_eq!(content, "fresh content");
 
-        // Cleanup
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -103,21 +279,17 @@ mod tests {
         let path = dir.join("orphan_test.md");
         let bak_path = make_bak_path(&path.display().to_string());
 
-        // Simulate an orphaned .bak from a previous crash
         std::fs::write(&path, "current content").unwrap();
         std::fs::write(&bak_path, "stale orphaned backup").unwrap();
 
-        // Save should succeed — the stale .bak gets overwritten with fresh backup, then cleaned
         let result = save_note_content(path.display().to_string(), "new content".to_string()).await;
         assert!(result.is_ok(), "save should succeed even with orphaned .bak");
 
         let content = std::fs::read_to_string(&path).unwrap();
         assert_eq!(content, "new content");
 
-        // .bak should be cleaned up
         assert!(!std::path::Path::new(&bak_path).exists(), "orphaned .bak should be cleaned up after successful save");
 
-        // Cleanup
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -128,7 +300,6 @@ mod tests {
         let path = dir.join("fm_test.md");
         let bak_path = make_bak_path(&path.display().to_string());
 
-        // Write a note with existing frontmatter
         std::fs::write(&path, "---\ntitle: Old\n---\n# Body\n").unwrap();
 
         let fm = VaultFrontmatter {
@@ -139,15 +310,103 @@ mod tests {
         let result = update_frontmatter(path.display().to_string(), fm).await;
         assert!(result.is_ok(), "update_frontmatter should succeed");
 
-        // Verify frontmatter was updated
         let content = std::fs::read_to_string(&path).unwrap();
         assert!(content.contains("New Title"), "frontmatter should contain new title");
         assert!(!content.contains("title: Old"), "old frontmatter should be replaced");
 
-        // Backup should be cleaned up on success
         assert!(!std::path::Path::new(&bak_path).exists(), ".bak should be removed after successful update_frontmatter");
 
-        // Cleanup
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_search_notes_empty_query() {
+        let result = search_notes("/any/path".to_string(), "".to_string()).await;
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_search_notes_query() {
+        let dir = std::env::temp_dir().join("tolaria_test_search");
+        let _ = std::fs::create_dir_all(&dir);
+        let note1 = dir.join("test_note.md");
+        let note2 = dir.join("other_note.md");
+        std::fs::write(&note1, "# Test Note\nContent").unwrap();
+        std::fs::write(&note2, "# Other Note\nContent").unwrap();
+
+        let result = search_notes(dir.display().to_string(), "test".to_string()).await;
+        assert!(result.is_ok());
+        let paths = result.unwrap();
+        assert!(!paths.is_empty());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_load_note_content() {
+        let dir = std::env::temp_dir().join("tolaria_test_load");
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("load_test.md");
+        std::fs::write(&path, "# Test\nContent").unwrap();
+
+        let result = load_note_content(path.display().to_string()).await;
+        assert!(result.is_ok());
+        assert!(result.unwrap().contains("Content"));
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_load_note_content_with_frontmatter() {
+        let dir = std::env::temp_dir().join("tolaria_test_load_fm");
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("load_test_fm.md");
+        std::fs::write(&path, "---\ntitle: Test\n---\n# Body\nContent").unwrap();
+
+        let result = load_note_content(path.display().to_string()).await;
+        assert!(result.is_ok());
+        let content = result.unwrap();
+        assert!(content.contains("Content"));
+        assert!(content.contains("title: Test"));
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_search_notes_case_insensitive() {
+        let dir = std::env::temp_dir().join("tolaria_test_search_ci");
+        let _ = std::fs::create_dir_all(&dir);
+        let note = dir.join("TEST_NOTE.md");
+        std::fs::write(&note, "# Test Note\nContent").unwrap();
+
+        let result = search_notes(dir.display().to_string(), "test".to_string()).await;
+        assert!(result.is_ok());
+        assert!(!result.unwrap().is_empty());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_list_backup_files_sorts_by_modified() {
+        let dir = std::env::temp_dir().join("tolaria_test_backup_sort");
+        let _ = std::fs::create_dir_all(&dir);
+        
+        let bak1 = dir.join("old.md.bak");
+        let bak2 = dir.join("new.md.bak");
+        
+        std::fs::write(&bak1, "old").unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        std::fs::write(&bak2, "new").unwrap();
+
+        let result = list_backup_files(dir.display().to_string());
+        assert!(result.is_ok());
+        let backups = result.unwrap();
+        assert_eq!(backups.len(), 2);
+        // Newest first
+        assert!(backups[0].path.contains("new"));
+        assert!(backups[1].path.contains("old"));
+
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

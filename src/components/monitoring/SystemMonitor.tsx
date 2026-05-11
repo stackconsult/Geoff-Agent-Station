@@ -81,7 +81,7 @@ export function SystemMonitor() {
                       ? 'bg-yellow-500'
                       : 'bg-red-500'
                   }`}
-                  style={{ width: `${specs.cpu_usage.toFixed(1)}%` }}
+                  style={{ width: `var(--progress-width, ${specs.cpu_usage.toFixed(1)}%)` }}
                 />
               </div>
             </div>
@@ -108,7 +108,7 @@ export function SystemMonitor() {
                       ? 'bg-yellow-500'
                       : 'bg-red-500'
                   }`}
-                  style={{ width: `${specs.memory_usage.toFixed(1)}%` }}
+                  style={{ width: `var(--progress-width, ${specs.memory_usage.toFixed(1)}%)` }}
                 />
               </div>
             </div>
