@@ -10,7 +10,7 @@ import { VaultSelector } from './components/VaultSelector';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { AppLayout, Sidebar, NoteList, Editor, AiPanel, StatusBar } from './components/layout';
 import { AutomationDashboard } from './pages/AutomationDashboard';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 
 const VAULT_PATH_KEY = 'tolaria_vault_path';
 
@@ -44,16 +44,11 @@ export default function App() {
   const [sidebarSelection, setSidebarSelection] = useState<SidebarSelection>({ kind: 'filter', filter: 'inbox' });
   const [showAutomation, setShowAutomation] = useState(false);
 
-  const DEFAULT_VAULT_PATH = 'C:\\Users\\Geoff Parsons\\Desktop\\tolaria-automation\\vault';
-
-  // Load vault path from localStorage on mount, fallback to default
+  // Load vault path from localStorage on mount — if none saved, VaultSelector appears
   useEffect(() => {
     const savedPath = localStorage.getItem(VAULT_PATH_KEY);
     if (savedPath) {
       setState(prev => ({ ...prev, vaultPath: savedPath }));
-    } else {
-      localStorage.setItem(VAULT_PATH_KEY, DEFAULT_VAULT_PATH);
-      setState(prev => ({ ...prev, vaultPath: DEFAULT_VAULT_PATH }));
     }
   }, []);
 
@@ -74,7 +69,6 @@ export default function App() {
   const loadNotes = async (path: string) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
       const notes: VaultEntry[] = await invoke('scan_vault', { vaultPath: path });
       setState(prev => ({ ...prev, notes, isLoading: false }));
     } catch (error) {
@@ -218,7 +212,7 @@ export default function App() {
               notes={filteredNotes}
               selectedNotePath={state.currentNote?.path}
               onSelectNote={handleNoteSelect}
-              onCreateNote={() => console.log('TODO: create note')}
+              onCreateNote={() => toast.info('Create note coming soon')}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
@@ -247,7 +241,7 @@ export default function App() {
               isVaultReloading={state.isLoading}
               onSync={handleSaveNote}
               onOpenVault={handleChangeVault}
-              onOpenSettings={() => console.log('TODO: settings')}
+              onOpenSettings={() => toast.info('Settings coming soon')}
               onToggleAutomation={() => setShowAutomation(!showAutomation)}
             />
           }
