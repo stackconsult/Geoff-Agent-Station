@@ -6,18 +6,41 @@ interface Message {
   content: string;
 }
 
+interface AISettings {
+  provider: 'ollama' | 'openai' | 'custom';
+  model: string;
+  baseUrl: string;
+  temperature: number;
+}
+
 export function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [aiSettings, setAiSettings] = useState<AISettings>({
+    provider: 'ollama',
+    model: 'llama3.2',
+    baseUrl: 'http://localhost:11434',
+    temperature: 0.7,
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastRequestTimeRef = useRef<number>(0);
   const MIN_REQUEST_INTERVAL_MS = 500;
 
   useEffect(() => {
-    initializeAI();
+    // Load AI settings from localStorage
+    const savedSettings = localStorage.getItem('tolaria_ai_settings');
+    if (savedSettings) {
+      setAiSettings(JSON.parse(savedSettings));
+    }
   }, []);
+
+  useEffect(() => {
+    if (aiSettings.model) {
+      initializeAI();
+    }
+  }, [aiSettings]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -25,15 +48,16 @@ export function AIChat() {
 
   const initializeAI = async () => {
     try {
+      const providerConfig = aiSettings.provider === 'ollama'
+        ? { Ollama: { model: aiSettings.model, base_url: aiSettings.baseUrl } }
+        : aiSettings.provider === 'openai'
+        ? { OpenAI: { model: aiSettings.model, base_url: aiSettings.baseUrl } }
+        : { Custom: { model: aiSettings.model, base_url: aiSettings.baseUrl } };
+
       await invoke('ai_initialize', {
         config: {
-          provider: {
-            Ollama: {
-              model: 'llama3.2:3b',
-              base_url: 'http://localhost:11434',
-            },
-          },
-          temperature: 0.7,
+          provider: providerConfig,
+          temperature: aiSettings.temperature,
           max_tokens: 2048,
           system_prompt: 'You are a helpful desktop automation assistant.',
         },

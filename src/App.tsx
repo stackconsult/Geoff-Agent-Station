@@ -11,6 +11,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { VaultSelector } from './components/VaultSelector';
 import { ErrorDisplay } from './components/ErrorDisplay';
+import { SettingsPanel } from './components/SettingsPanel';
 import { AppLayout, Sidebar, NoteList, Editor, AiPanel, StatusBar } from './components/layout';
 import { AutomationDashboard } from './pages/AutomationDashboard';
 import { Toaster, toast } from 'sonner';
@@ -32,8 +33,9 @@ export default function App() {
   const { aiPanelOpen, editorMode, searchQuery, sidebarSelection, showAutomation, toggleAi, setEditorMode, setSearchQuery, setSidebarSelection, setShowAutomation } = useUIStore();
   const { content, syncStatus, lastSyncTime, isLoadingNote, setContent, setSyncStatus, setIsLoadingNote, updateLastSync } = useEditorStore();
 
-  // Local state only for localStorage vault path persistence
+  // Local state only for localStorage vault path persistence and settings panel
   const [localVaultPath, setLocalVaultPath] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Load vault path from localStorage on mount — if none saved, VaultSelector appears
   useEffect(() => {
@@ -229,13 +231,14 @@ created: ${new Date().toISOString()}
               isVaultReloading={isLoading}
               onSync={handleSaveNote}
               onOpenVault={handleChangeVault}
-              onOpenSettings={() => toast.info('Settings coming soon')}
+              onOpenSettings={() => setShowSettings(true)}
               onToggleAutomation={() => setShowAutomation(!showAutomation)}
             />
           }
         />
         )}
       </div>
+      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <Toaster
         position="bottom-right"
         toastOptions={{
