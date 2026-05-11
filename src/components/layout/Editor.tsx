@@ -1,6 +1,8 @@
 import React, { useCallback } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
+import { ErrorFallback } from '../ui/ErrorFallback';
 import {
   ChevronRight,
   FileText,
@@ -9,6 +11,8 @@ import {
   Save,
   Loader2,
 } from 'lucide-react';
+import { RichEditorView, type EditorError } from '../editor/RichEditorView';
+import { RawEditorView } from '../editor/RawEditorView';
 
 interface EditorNote {
   id: string;
@@ -41,16 +45,16 @@ export function Editor({
   onSave,
   className,
 }: EditorProps) {
-  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onContentChange?.(e.target.value);
-  }, [onContentChange]);
-
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 's') {
       e.preventDefault();
       onSave?.();
     }
   }, [onSave]);
+
+  const handleEditorError = useCallback((err: EditorError) => {
+    console.error('[Editor] Editor error:', err);
+  }, []);
 
   if (!note) {
     return (
@@ -140,28 +144,34 @@ export function Editor({
           />
         </div>
 
-        {/* Content Textarea - ACTUAL FUNCTIONAL EDITOR */}
+        {/* Editor Content - Rich or Raw mode */}
         <div className="flex-1 px-4 pb-4 overflow-hidden">
           {note.isLoading ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-8 w-8 text-[var(--color-accent-primary)] animate-spin" />
               <span className="ml-2 text-[var(--color-text-secondary)]">Loading note...</span>
             </div>
+          ) : mode === 'rich' ? (
+            <ErrorBoundary
+              fallback={<ErrorFallback message="Rich editor crashed. Switch to Raw mode." />}
+              onReset={() => window.location.reload()}
+            >
+              <RichEditorView
+                content={note.content}
+                onChange={(md) => onContentChange?.(md)}
+                onError={handleEditorError}
+              />
+            </ErrorBoundary>
           ) : (
-            <textarea
-              value={note.content}
-              onChange={handleContentChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Start writing..."
-              className={cn(
-                "w-full h-full resize-none bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)]",
-                "px-4 py-3 text-[var(--color-text-primary)] text-base leading-relaxed",
-                "placeholder:text-[var(--color-text-muted)]",
-                "focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-primary)] focus:border-transparent",
-                "font-mono" // Monospace for raw markdown editing
-              )}
-              spellCheck={false}
-            />
+            <ErrorBoundary
+              fallback={<ErrorFallback message="Raw editor crashed." />}
+              onReset={() => window.location.reload()}
+            >
+              <RawEditorView
+                content={note.content}
+                onChange={onContentChange}
+              />
+            </ErrorBoundary>
           )}
         </div>
 

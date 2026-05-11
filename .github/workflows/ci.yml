@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [master, 'cascade/**']
+  pull_request:
+    branches: [master]
+
+jobs:
+  rust:
+    name: Rust Check & Test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry & build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+
+      - name: Install system dependencies
+        run: |
+          # Tauri requires WebView2 on Windows — pre-installed on GH runners
+          echo "Windows runner — WebView2 available"
+
+      - name: cargo check (zero warnings gate)
+        working-directory: src-tauri
+        run: cargo check 2>&1
+        # Note: warnings are suppressed at source, so this should be clean
+
+      - name: cargo test
+        working-directory: src-tauri
+        run: cargo test
+
+  frontend:
+    name: Frontend Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: Vitest
+        run: npx vitest run

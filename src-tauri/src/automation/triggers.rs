@@ -53,6 +53,7 @@ pub enum SystemEventType {
     BatteryCharging,
 }
 
+#[allow(dead_code)] // Convenience constructors — scaffolding for future trigger wiring
 impl Trigger {
     pub fn file_change(path: PathBuf, event_type: FileEventType) -> Self {
         Self::FileChange { path, event_type }

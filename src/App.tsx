@@ -1,13 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAutoGit } from './hooks/useAutoGit';
 import { useVaultLoader } from './hooks/useVaultLoader';
-import type { AppState, VaultEntry } from './types';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import type { AppState, VaultEntry, SidebarSelection, SyncStatus } from './types';
+import { ErrorBoundary as ClassErrorBoundary } from './components/ErrorBoundary';
+import { ErrorBoundary } from 'react-error-boundary';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { VaultSelector } from './components/VaultSelector';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { AppLayout, Sidebar, NoteList, Editor, AiPanel, StatusBar } from './components/layout';
+import { AutomationDashboard } from './pages/AutomationDashboard';
+import { Toaster } from 'sonner';
 
 const VAULT_PATH_KEY = 'tolaria_vault_path';
 
@@ -34,6 +37,12 @@ export default function App() {
   const [aiPanelOpen, setAiPanelOpen] = useState(true);
   const [currentNoteContent, setCurrentNoteContent] = useState('');
   const [isLoadingNote, setIsLoadingNote] = useState(false);
+  const [editorMode, setEditorMode] = useState<'rich' | 'raw'>('rich');
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  // SidebarSelection — real Tolaria union type
+  const [sidebarSelection, setSidebarSelection] = useState<SidebarSelection>({ kind: 'filter', filter: 'inbox' });
+  const [showAutomation, setShowAutomation] = useState(false);
 
   const DEFAULT_VAULT_PATH = 'C:\\Users\\Geoff Parsons\\Desktop\\tolaria-automation\\vault';
 
@@ -76,13 +85,6 @@ export default function App() {
   useVaultLoader(state.vaultPath);
   useAutoGit(state.vaultPath);
 
-  // Filter notes based on search query
-  const filteredNotes = searchQuery
-    ? state.notes.filter(note => 
-        note.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : state.notes;
-
   const handleVaultSelect = (path: string) => {
     setState(prev => ({ ...prev, vaultPath: path }));
   };
@@ -105,22 +107,27 @@ export default function App() {
     }
   }, []);
 
+  const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleContentChange = useCallback((content: string) => {
     setCurrentNoteContent(content);
+    // Clear any pending debounced save — actual save is always manual (Cmd+S)
+    if (autoSaveDebounceRef.current) clearTimeout(autoSaveDebounceRef.current);
   }, []);
 
   const handleSaveNote = useCallback(async () => {
     if (!state.currentNote?.path) return;
-    
+    setSyncStatus('syncing');
     try {
-      await invoke('save_note_content', { 
-        path: state.currentNote.path, 
-        content: currentNoteContent 
+      await invoke('save_note_content', {
+        path: state.currentNote.path,
+        content: currentNoteContent,
       });
-      
-      // Refresh the note list to show updated timestamps
+      setLastSyncTime(Date.now());
+      setSyncStatus('idle');
       loadNotes(state.vaultPath);
     } catch (error) {
+      setSyncStatus('error');
       setState(prev => ({ ...prev, error: String(error) }));
     }
   }, [state.currentNote, currentNoteContent, state.vaultPath]);
@@ -134,54 +141,84 @@ export default function App() {
     setState({ vaultPath: '', notes: [], currentNote: null, isLoading: false, error: null });
   };
 
-  // Transform notes for NoteList component
-  const noteListItems = filteredNotes.map(note => ({
-    ...note,
-    snippet: '', // Will be loaded when needed
-    modifiedAt: new Date(note.frontmatter?.modified || Date.now()).toLocaleDateString(),
-  }));
+  // Filter notes by sidebar selection + search query
+  const filteredNotes = state.notes.filter((note) => {
+    if (searchQuery && !note.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (sidebarSelection.kind === 'filter') {
+      if (sidebarSelection.filter === 'archived') return note.archived;
+      if (sidebarSelection.filter === 'favorites') return note.favorite;
+      if (sidebarSelection.filter === 'inbox') return !note.organized && !note.archived;
+      // 'all', 'changes', 'pulse' — show all non-archived
+      return !note.archived;
+    }
+    if (sidebarSelection.kind === 'sectionGroup') return note.isA === sidebarSelection.type;
+    if (sidebarSelection.kind === 'folder') return note.path.startsWith(sidebarSelection.path);
+    return true;
+  });
 
-  // Transform current note for Editor
+  // Editor note shape — path as breadcrumb segments
   const editorNote = state.currentNote ? {
-    id: state.currentNote.id,
+    id: state.currentNote.path,
     title: state.currentNote.title,
     content: currentNoteContent,
-    path: ['Vault', state.currentNote.title],
+    path: state.currentNote.path.split(/[\\/]/).filter(Boolean).slice(-3),
     isLoading: isLoadingNote,
   } : null;
 
   if (!state.vaultPath) {
     return (
-      <ErrorBoundary>
+      <ClassErrorBoundary>
         <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
           {state.isLoading && <LoadingSpinner />}
           {state.error && <ErrorDisplay error={state.error} onDismiss={handleDismissError} />}
           <VaultSelector onVaultSelect={handleVaultSelect} isLoading={state.isLoading} />
         </div>
-      </ErrorBoundary>
+      </ClassErrorBoundary>
     );
   }
 
   return (
-    <ErrorBoundary>
+    <ClassErrorBoundary>
       <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
         {state.isLoading && <LoadingSpinner />}
         {state.error && <ErrorDisplay error={state.error} onDismiss={handleDismissError} />}
-        
+        {showAutomation ? (
+          <ErrorBoundary
+            fallback={
+              <div className="h-screen flex items-center justify-center bg-[var(--color-bg-primary)]">
+                <div className="text-center p-8 max-w-md">
+                  <p className="text-red-400 text-lg font-semibold mb-2">Automation Dashboard Error</p>
+                  <p className="text-[var(--color-text-secondary)] text-sm mb-4">
+                    A tab component crashed. Check the console for details.
+                  </p>
+                  <button
+                    onClick={() => setShowAutomation(false)}
+                    className="px-4 py-2 bg-[var(--color-accent)] text-white rounded text-sm"
+                  >
+                    Return to Editor
+                  </button>
+                </div>
+              </div>
+            }
+          >
+            <AutomationDashboard />
+          </ErrorBoundary>
+        ) : (
         <AppLayout
           sidebar={
             <Sidebar
-              vaultName={state.vaultPath.split('/').pop() || 'Vault'}
-              currentFilter="all"
-              onFilterChange={(filter) => console.log('Filter:', filter)}
+              vaultName={state.vaultPath.split(/[\\/]/).pop() || 'Vault'}
+              entries={state.notes}
+              selection={sidebarSelection}
+              onSelect={setSidebarSelection}
             />
           }
           noteList={
             <NoteList
-              notes={noteListItems}
-              selectedNoteId={state.currentNote?.id}
+              notes={filteredNotes}
+              selectedNotePath={state.currentNote?.path}
               onSelectNote={handleNoteSelect}
-              onCreateNote={() => console.log('Create note')}
+              onCreateNote={() => console.log('TODO: create note')}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
@@ -189,8 +226,8 @@ export default function App() {
           editor={
             <Editor
               note={editorNote}
-              mode="rich"
-              onModeChange={(mode) => console.log('Mode:', mode)}
+              mode={editorMode}
+              onModeChange={setEditorMode}
               onContentChange={handleContentChange}
               onSave={handleSaveNote}
             />
@@ -203,19 +240,31 @@ export default function App() {
           }
           statusBar={
             <StatusBar
-              version="0.1.0"
-              branch="main"
-              syncStatus="synced"
-              lastSync="2m ago"
+              noteCount={state.notes.length}
               vaultPath={state.vaultPath}
-              onSync={() => console.log('Sync')}
+              syncStatus={syncStatus}
+              lastSyncTime={lastSyncTime}
+              isVaultReloading={state.isLoading}
+              onSync={handleSaveNote}
               onOpenVault={handleChangeVault}
-              onOpenSettings={() => console.log('Settings')}
+              onOpenSettings={() => console.log('TODO: settings')}
+              onToggleAutomation={() => setShowAutomation(!showAutomation)}
             />
           }
         />
+        )}
       </div>
-    </ErrorBoundary>
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: 'var(--color-bg-secondary)',
+            color: 'var(--color-text-primary)',
+            border: '1px solid var(--color-border-primary)',
+          },
+        }}
+      />
+    </ClassErrorBoundary>
   );
 }
 

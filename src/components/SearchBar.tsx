@@ -26,7 +26,18 @@ export function SearchBar({ vaultPath, onResults }: SearchBarProps) {
       
       // Results are note IDs - for now just return them as-is
       // In production, would fetch full note details
-      onResults(results.map(id => ({ id, title: id, path: id, frontmatter: {}, links: [] }) as VaultEntry));
+      onResults(results.map((path): VaultEntry => ({
+        path,
+        filename: path.split(/[\\/]/).pop() ?? path,
+        title: path.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? path,
+        isA: null, aliases: [], belongsTo: [], relatedTo: [],
+        status: null, archived: false, modifiedAt: null, createdAt: null,
+        fileSize: 0, snippet: '', wordCount: 0, relationships: {},
+        icon: null, color: null, order: null, sidebarLabel: null,
+        template: null, sort: null, view: null, visible: null,
+        organized: false, favorite: false, favoriteIndex: null,
+        listPropertiesDisplay: [], outgoingLinks: [], properties: {}, hasH1: false,
+      })));
     } catch (error) {
       console.error('Search failed:', error);
       onResults([]);

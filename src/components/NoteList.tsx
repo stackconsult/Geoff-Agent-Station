@@ -9,7 +9,7 @@ interface NoteListProps {
 }
 
 export function NoteList({ notes, currentNote, onNoteSelect }: NoteListProps) {
-  const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
+  const [selectedNotes, setSelectedNotes] = useState<string[]>([]); // uses path as ID
 
   const handleOrganize = async () => {
     await organizeSelectedNotes(selectedNotes, {
@@ -26,24 +26,24 @@ export function NoteList({ notes, currentNote, onNoteSelect }: NoteListProps) {
       )}
       {notes.map((note) => (
         <div
-          key={note.id}
-          className={`note-item ${currentNote?.id === note.id ? 'active' : ''}`}
+          key={note.path}
+          className={`note-item ${currentNote?.path === note.path ? 'active' : ''}`}
           onClick={() => onNoteSelect(note)}
         >
           <input
             type="checkbox"
-            id={`note-${note.id}`}
-            checked={selectedNotes.includes(note.id)}
+            id={`note-${note.path}`}
+            checked={selectedNotes.includes(note.path)}
             onChange={(e) => {
               e.stopPropagation();
               if (e.target.checked) {
-                setSelectedNotes([...selectedNotes, note.id]);
+                setSelectedNotes([...selectedNotes, note.path]);
               } else {
-                setSelectedNotes(selectedNotes.filter(id => id !== note.id));
+                setSelectedNotes(selectedNotes.filter(p => p !== note.path));
               }
             }}
           />
-          <label htmlFor={`note-${note.id}`}>{note.title}</label>
+          <label htmlFor={`note-${note.path}`}>{note.title}</label>
         </div>
       ))}
       {selectedNotes.length > 0 && (
