@@ -1,6 +1,8 @@
 import React, { useCallback } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
+import { ErrorFallback } from '../ui/ErrorFallback';
 import {
   ChevronRight,
   FileText,
@@ -9,7 +11,7 @@ import {
   Save,
   Loader2,
 } from 'lucide-react';
-import { RichEditorView } from '../editor/RichEditorView';
+import { RichEditorView, type EditorError } from '../editor/RichEditorView';
 import { RawEditorView } from '../editor/RawEditorView';
 
 interface EditorNote {
@@ -43,16 +45,16 @@ export function Editor({
   onSave,
   className,
 }: EditorProps) {
-  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onContentChange?.(e.target.value);
-  }, [onContentChange]);
-
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 's') {
       e.preventDefault();
       onSave?.();
     }
   }, [onSave]);
+
+  const handleEditorError = useCallback((err: EditorError) => {
+    console.error('[Editor] Editor error:', err);
+  }, []);
 
   if (!note) {
     return (
@@ -150,15 +152,26 @@ export function Editor({
               <span className="ml-2 text-[var(--color-text-secondary)]">Loading note...</span>
             </div>
           ) : mode === 'rich' ? (
-            <RichEditorView
-              content={note.content}
-              onChange={onContentChange}
-            />
+            <ErrorBoundary
+              fallback={<ErrorFallback message="Rich editor crashed. Switch to Raw mode." />}
+              onReset={() => window.location.reload()}
+            >
+              <RichEditorView
+                content={note.content}
+                onChange={(md) => onContentChange?.(md)}
+                onError={handleEditorError}
+              />
+            </ErrorBoundary>
           ) : (
-            <RawEditorView
-              content={note.content}
-              onChange={onContentChange}
-            />
+            <ErrorBoundary
+              fallback={<ErrorFallback message="Raw editor crashed." />}
+              onReset={() => window.location.reload()}
+            >
+              <RawEditorView
+                content={note.content}
+                onChange={onContentChange}
+              />
+            </ErrorBoundary>
           )}
         </div>
 

@@ -2,14 +2,23 @@ import { useEffect, useState, useRef } from 'react';
 import { BlockNoteViewRaw, useCreateBlockNote } from '@blocknote/react';
 import { Loader2 } from 'lucide-react';
 
+// ─── Error Types ───
+export type EditorError =
+  | { type: 'parse_failed'; markdown: string; reason: string }
+  | { type: 'export_failed'; reason: string }
+  | { type: 'import_failed'; reason: string };
+
+// ─── Props ───
 interface RichEditorViewProps {
   content: string;
-  onChange?: (content: string) => void;
+  onChange?: (content: string, metadata: { isValid: boolean; errors?: EditorError[] }) => void;
+  onError?: (error: EditorError) => void;
   readOnly?: boolean;
 }
 
-export function RichEditorView({ content, onChange, readOnly = false }: RichEditorViewProps) {
+export function RichEditorView({ content, onChange, onError, readOnly = false }: RichEditorViewProps) {
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   const editor = useCreateBlockNote({
     uploadFile: async (file) => {
@@ -20,33 +29,68 @@ export function RichEditorView({ content, onChange, readOnly = false }: RichEdit
   const contentRef = useRef(content);
   contentRef.current = content;
 
+  // ─── Import: Load markdown into editor ───
   useEffect(() => {
-    if (editor && content) {
-      const currentContent = editor.document;
-      if (currentContent.length === 0 || (currentContent.length === 1 && currentContent[0].content === undefined)) {
-        editor.pasteMarkdown(content);
+    if (!editor) return;
+    if (content) {
+      try {
+        const currentContent = editor.document;
+        const isEmpty = currentContent.length === 0 ||
+          (currentContent.length === 1 && !currentContent[0].content);
+        if (isEmpty) {
+          editor.pasteMarkdown(content);
+        }
+      } catch (e) {
+        const err: EditorError = {
+          type: 'import_failed',
+          reason: e instanceof Error ? e.message : String(e),
+        };
+        onError?.(err);
+        setHasError(true);
       }
     }
     setIsLoading(false);
-  }, [editor]);
+  }, [editor]); // Intentionally omit 'content' — external updates handled by parent
 
+  // ─── Export: Convert editor blocks → markdown on change ───
   useEffect(() => {
-    if (!readOnly && editor) {
-      const handleChange = () => {
-        try {
-          const doc = editor.document;
-          const markdown = serializeBlocksToMarkdown(doc);
-          if (markdown !== contentRef.current) {
-            onChange?.(markdown);
-          }
-        } catch (e) {
-          console.error('Markdown export failed:', e);
-        }
-      };
-      editor.onChange(handleChange);
-    }
-  }, [editor, onChange, readOnly]);
+    if (readOnly || !editor) return;
 
+    const handleChange = () => {
+      try {
+        const markdown = editor.blocksToMarkdownLossy(editor.document);
+        if (markdown !== contentRef.current) {
+          onChange?.(markdown, { isValid: true });
+        }
+      } catch (e) {
+        const err: EditorError = {
+          type: 'export_failed',
+          reason: e instanceof Error ? e.message : String(e),
+        };
+        onError?.(err);
+        console.error('[RichEditorView] Markdown export failed:', e);
+      }
+    };
+
+    editor.onChange(handleChange);
+  }, [editor, onChange, onError, readOnly]);
+
+  // ─── Error State ───
+  if (hasError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+        <div className="text-red-400 mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h3 className="text-lg font-semibold text-red-300 mb-1">Editor Error</h3>
+        <p className="text-sm text-[var(--color-text-secondary)] max-w-md">
+          The rich editor failed to load. Switch to <strong>Raw mode</strong> to edit this note safely.
+        </p>
+      </div>
+    );
+  }
+
+  // ─── Loading State ───
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -56,6 +100,7 @@ export function RichEditorView({ content, onChange, readOnly = false }: RichEdit
     );
   }
 
+  // ─── Editor ───
   return (
     <div className="h-full overflow-auto">
       <BlockNoteViewRaw
@@ -66,57 +111,4 @@ export function RichEditorView({ content, onChange, readOnly = false }: RichEdit
       />
     </div>
   );
-}
-
-function serializeBlocksToMarkdown(doc: any[]): string {
-  if (!doc || doc.length === 0) return '';
-  
-  return doc.map(block => {
-    if (!block) return '';
-    
-    const content = block.content;
-    if (!content) return '';
-    
-    const text = Array.isArray(content) 
-      ? content.map((c: any) => c.text || '').join('')
-      : content.text || '';
-    
-    switch (block.type) {
-      case 'heading':
-        const level = block.props?.level || 1;
-        return '#'.repeat(level) + ' ' + text;
-      case 'bulletListItem':
-        return '- ' + text;
-      case 'numberedListItem':
-        return '1. ' + text;
-      case 'paragraph':
-      default:
-        return text;
-    }
-  }).join('\n');
-}
-
-function parseMarkdownToBlocks(markdown: string) {
-  const lines = markdown.split('\n');
-  const blocks: { type: string; content: string }[] = [];
-
-  for (const line of lines) {
-    if (line.startsWith('# ')) {
-      blocks.push({ type: 'heading', content: line.slice(2) });
-    } else if (line.startsWith('## ')) {
-      blocks.push({ type: 'heading', content: line.slice(3) });
-    } else if (line.startsWith('### ')) {
-      blocks.push({ type: 'heading', content: line.slice(4) });
-    } else if (line.startsWith('- ')) {
-      blocks.push({ type: 'bulletListItem', content: line.slice(2) });
-    } else if (line.match(/^\d+\. /)) {
-      blocks.push({ type: 'numberedListItem', content: line.replace(/^\d+\. /, '') });
-    } else if (line.trim() === '') {
-      blocks.push({ type: 'paragraph', content: '' });
-    } else {
-      blocks.push({ type: 'paragraph', content: line });
-    }
-  }
-
-  return blocks.length > 0 ? blocks : undefined;
 }

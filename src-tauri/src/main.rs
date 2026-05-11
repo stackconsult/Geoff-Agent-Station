@@ -4,6 +4,9 @@
 mod vault;
 mod git;
 mod mcp;
+mod ai;
+mod clipboard;
+mod productivity;
 mod commands;
 
 fn main() {

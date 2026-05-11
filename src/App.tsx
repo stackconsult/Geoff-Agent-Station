@@ -9,6 +9,7 @@ import { VaultSelector } from './components/VaultSelector';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { AppLayout, Sidebar, NoteList, Editor, AiPanel, StatusBar } from './components/layout';
 import { AutomationDashboard } from './pages/AutomationDashboard';
+import { Toaster } from 'sonner';
 
 const VAULT_PATH_KEY = 'tolaria_vault_path';
 
@@ -229,6 +230,16 @@ export default function App() {
         />
         )}
       </div>
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: 'var(--color-bg-secondary)',
+            color: 'var(--color-text-primary)',
+            border: '1px solid var(--color-border-primary)',
+          },
+        }}
+      />
     </ErrorBoundary>
   );
 }
