@@ -1,0 +1,7 @@
+# Maestro session data — opt-in to version control
+sessions/
+decisions.jsonl
+audit.jsonl
+
+# Context file IS versioned
+!context.md
