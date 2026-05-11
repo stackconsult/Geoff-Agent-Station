@@ -2,7 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAutoGit } from './hooks/useAutoGit';
 import { useVaultLoader } from './hooks/useVaultLoader';
-import type { AppState, VaultEntry, SidebarSelection, SyncStatus } from './types';
+import { useVaultStore } from './stores/vaultStore';
+import { useUIStore } from './stores/uiStore';
+import { useEditorStore } from './stores/editorStore';
+import type { VaultEntry, SidebarSelection } from './types';
 import { ErrorBoundary as ClassErrorBoundary } from './components/ErrorBoundary';
 import { ErrorBoundary } from 'react-error-boundary';
 import { LoadingSpinner } from './components/LoadingSpinner';
@@ -25,118 +28,87 @@ const VAULT_PATH_KEY = 'tolaria_vault_path';
  * └─────────────────────────────────────────────────────────────┘
  */
 export default function App() {
-  const [state, setState] = useState<AppState>({
-    vaultPath: '',
-    notes: [],
-    currentNote: null,
-    isLoading: false,
-    error: null
-  });
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [aiPanelOpen, setAiPanelOpen] = useState(true);
-  const [currentNoteContent, setCurrentNoteContent] = useState('');
-  const [isLoadingNote, setIsLoadingNote] = useState(false);
-  const [editorMode, setEditorMode] = useState<'rich' | 'raw'>('rich');
-  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  // SidebarSelection — real Tolaria union type
-  const [sidebarSelection, setSidebarSelection] = useState<SidebarSelection>({ kind: 'filter', filter: 'inbox' });
-  const [showAutomation, setShowAutomation] = useState(false);
+  const { vaultPath, notes, currentNote, isLoading, error, loadNotes, selectNote, saveNote } = useVaultStore();
+  const { aiPanelOpen, editorMode, searchQuery, sidebarSelection, showAutomation, toggleAi, setEditorMode, setSearchQuery, setSidebarSelection, setShowAutomation } = useUIStore();
+  const { content, syncStatus, lastSyncTime, isLoadingNote, setContent, setSyncStatus, setIsLoadingNote, updateLastSync } = useEditorStore();
+
+  // Local state only for localStorage vault path persistence
+  const [localVaultPath, setLocalVaultPath] = useState<string | null>(null);
 
   // Load vault path from localStorage on mount — if none saved, VaultSelector appears
   useEffect(() => {
     const savedPath = localStorage.getItem(VAULT_PATH_KEY);
     if (savedPath) {
-      setState(prev => ({ ...prev, vaultPath: savedPath }));
+      setLocalVaultPath(savedPath);
+      loadNotes(savedPath);
     }
   }, []);
 
   // Save vault path to localStorage when it changes
   useEffect(() => {
-    if (state.vaultPath) {
-      localStorage.setItem(VAULT_PATH_KEY, state.vaultPath);
+    if (vaultPath) {
+      localStorage.setItem(VAULT_PATH_KEY, vaultPath);
+      setLocalVaultPath(vaultPath);
     }
-  }, [state.vaultPath]);
+  }, [vaultPath]);
 
-  // Load notes when vault path is set
-  useEffect(() => {
-    if (state.vaultPath) {
-      loadNotes(state.vaultPath);
-    }
-  }, [state.vaultPath]);
-
-  const loadNotes = async (path: string) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-    try {
-      const notes: VaultEntry[] = await invoke('scan_vault', { vaultPath: path });
-      setState(prev => ({ ...prev, notes, isLoading: false }));
-    } catch (error) {
-      setState(prev => ({ ...prev, error: String(error), isLoading: false }));
-    }
-  };
-
-  useVaultLoader(state.vaultPath);
-  useAutoGit(state.vaultPath);
+  useVaultLoader(vaultPath);
+  useAutoGit(vaultPath);
 
   const handleVaultSelect = (path: string) => {
-    setState(prev => ({ ...prev, vaultPath: path }));
+    loadNotes(path);
   };
 
   const handleNoteSelect = useCallback(async (note: VaultEntry) => {
-    setState(prev => ({ ...prev, currentNote: note }));
+    selectNote(note);
     
     // CRITICAL: Load actual note content from disk
     if (note.path) {
       setIsLoadingNote(true);
       try {
-        const content: string = await invoke('load_note_content', { path: note.path });
-        setCurrentNoteContent(content);
+        const noteContent: string = await invoke('load_note_content', { path: note.path });
+        setContent(noteContent);
       } catch (error) {
         console.error('Failed to load note:', error);
-        setCurrentNoteContent('');
+        setContent('');
       } finally {
         setIsLoadingNote(false);
       }
     }
-  }, []);
+  }, [selectNote, setIsLoadingNote, setContent]);
 
   const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleContentChange = useCallback((content: string) => {
-    setCurrentNoteContent(content);
+  const handleContentChange = useCallback((noteContent: string) => {
+    setContent(noteContent);
     // Clear any pending debounced save — actual save is always manual (Cmd+S)
     if (autoSaveDebounceRef.current) clearTimeout(autoSaveDebounceRef.current);
-  }, []);
+  }, [setContent]);
 
   const handleSaveNote = useCallback(async () => {
-    if (!state.currentNote?.path) return;
+    if (!currentNote?.path) return;
     setSyncStatus('syncing');
     try {
-      await invoke('save_note_content', {
-        path: state.currentNote.path,
-        content: currentNoteContent,
-      });
-      setLastSyncTime(Date.now());
+      await saveNote(currentNote.path, content);
+      updateLastSync();
       setSyncStatus('idle');
-      loadNotes(state.vaultPath);
     } catch (error) {
       setSyncStatus('error');
-      setState(prev => ({ ...prev, error: String(error) }));
     }
-  }, [state.currentNote, currentNoteContent, state.vaultPath]);
+  }, [currentNote, content, saveNote, setSyncStatus, updateLastSync]);
 
   const handleDismissError = () => {
-    setState(prev => ({ ...prev, error: null }));
+    // Error handling in vaultStore clears error on next action
   };
 
   const handleChangeVault = () => {
     localStorage.removeItem(VAULT_PATH_KEY);
-    setState({ vaultPath: '', notes: [], currentNote: null, isLoading: false, error: null });
+    setLocalVaultPath(null);
+    // Store reset happens via vault path being empty
   };
 
   // Filter notes by sidebar selection + search query
-  const filteredNotes = state.notes.filter((note) => {
+  const filteredNotes = notes.filter((note) => {
     if (searchQuery && !note.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (sidebarSelection.kind === 'filter') {
       if (sidebarSelection.filter === 'archived') return note.archived;
@@ -151,21 +123,21 @@ export default function App() {
   });
 
   // Editor note shape — path as breadcrumb segments
-  const editorNote = state.currentNote ? {
-    id: state.currentNote.path,
-    title: state.currentNote.title,
-    content: currentNoteContent,
-    path: state.currentNote.path.split(/[\\/]/).filter(Boolean).slice(-3),
+  const editorNote = currentNote ? {
+    id: currentNote.path,
+    title: currentNote.title,
+    content,
+    path: currentNote.path.split(/[\\/]/).filter(Boolean).slice(-3),
     isLoading: isLoadingNote,
   } : null;
 
-  if (!state.vaultPath) {
+  if (!localVaultPath) {
     return (
       <ClassErrorBoundary>
         <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
-          {state.isLoading && <LoadingSpinner />}
-          {state.error && <ErrorDisplay error={state.error} onDismiss={handleDismissError} />}
-          <VaultSelector onVaultSelect={handleVaultSelect} isLoading={state.isLoading} />
+          {isLoading && <LoadingSpinner />}
+          {error && <ErrorDisplay error={error} onDismiss={handleDismissError} />}
+          <VaultSelector onVaultSelect={handleVaultSelect} isLoading={isLoading} />
         </div>
       </ClassErrorBoundary>
     );
@@ -174,12 +146,12 @@ export default function App() {
   return (
     <ClassErrorBoundary>
       <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
-        {state.isLoading && <LoadingSpinner />}
-        {state.error && <ErrorDisplay error={state.error} onDismiss={handleDismissError} />}
+        {isLoading && <LoadingSpinner />}
+        {error && <ErrorDisplay error={error} onDismiss={handleDismissError} />}
         {showAutomation ? (
           <ErrorBoundary
             fallback={
-              <div className="h-screen flex items-center justify-center bg-[var(--color-bg-primary)]">
+              <div className="h-screen flex items justify-center bg-[var(--color-bg-primary)]">
                 <div className="text-center p-8 max-w-md">
                   <p className="text-red-400 text-lg font-semibold mb-2">Automation Dashboard Error</p>
                   <p className="text-[var(--color-text-secondary)] text-sm mb-4">
@@ -201,8 +173,8 @@ export default function App() {
         <AppLayout
           sidebar={
             <Sidebar
-              vaultName={state.vaultPath.split(/[\\/]/).pop() || 'Vault'}
-              entries={state.notes}
+              vaultName={vaultPath.split(/[\\/]/).pop() || 'Vault'}
+              entries={notes}
               selection={sidebarSelection}
               onSelect={setSidebarSelection}
             />
@@ -210,9 +182,25 @@ export default function App() {
           noteList={
             <NoteList
               notes={filteredNotes}
-              selectedNotePath={state.currentNote?.path}
+              selectedNotePath={currentNote?.path}
               onSelectNote={handleNoteSelect}
-              onCreateNote={() => toast.info('Create note coming soon')}
+              onCreateNote={async () => {
+                if (!vaultPath) return;
+                const newNotePath = `${vaultPath}/Untitled.md`;
+                const template = `---
+created: ${new Date().toISOString()}
+---
+# Untitled
+
+`;
+                try {
+                  await invoke('save_note_content', { path: newNotePath, content: template });
+                  await loadNotes(vaultPath);
+                  toast.success('Note created');
+                } catch (error) {
+                  toast.error(`Failed to create note: ${error}`);
+                }
+              }}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
@@ -229,16 +217,16 @@ export default function App() {
           aiPanel={
             <AiPanel
               isOpen={aiPanelOpen}
-              onToggle={() => setAiPanelOpen(!aiPanelOpen)}
+              onToggle={toggleAi}
             />
           }
           statusBar={
             <StatusBar
-              noteCount={state.notes.length}
-              vaultPath={state.vaultPath}
+              noteCount={notes.length}
+              vaultPath={vaultPath}
               syncStatus={syncStatus}
               lastSyncTime={lastSyncTime}
-              isVaultReloading={state.isLoading}
+              isVaultReloading={isLoading}
               onSync={handleSaveNote}
               onOpenVault={handleChangeVault}
               onOpenSettings={() => toast.info('Settings coming soon')}
