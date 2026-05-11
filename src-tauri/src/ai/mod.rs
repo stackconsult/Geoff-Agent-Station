@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::Mutex;
 
 pub mod llm_client;
@@ -50,6 +51,43 @@ pub struct Message {
 pub struct AIEngine {
     config: Arc<Mutex<AIConfig>>,
     conversation_history: Arc<Mutex<Vec<Message>>>,
+    rate_limiter: Arc<Mutex<RateLimiter>>,
+}
+
+#[derive(Debug)]
+struct RateLimiter {
+    tokens: usize,
+    max_tokens: usize,
+    refill_rate: usize,
+    last_refill: Instant,
+}
+
+impl RateLimiter {
+    fn new(max_tokens: usize, refill_rate: usize) -> Self {
+        Self {
+            tokens: max_tokens,
+            max_tokens,
+            refill_rate,
+            last_refill: Instant::now(),
+        }
+    }
+
+    fn try_acquire(&mut self) -> bool {
+        self.refill();
+        if self.tokens > 0 {
+            self.tokens -= 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    fn refill(&mut self) {
+        let elapsed = self.last_refill.elapsed();
+        let tokens_to_add = (elapsed.as_secs() as usize) * self.refill_rate;
+        self.tokens = (self.tokens + tokens_to_add).min(self.max_tokens);
+        self.last_refill = Instant::now();
+    }
 }
 
 impl AIEngine {
@@ -57,10 +95,18 @@ impl AIEngine {
         Self {
             config: Arc::new(Mutex::new(config)),
             conversation_history: Arc::new(Mutex::new(Vec::new())),
+            rate_limiter: Arc::new(Mutex::new(RateLimiter::new(10, 2))), // 10 tokens, refill 2/sec
         }
     }
 
     pub async fn chat(&self, user_message: String) -> Result<String, String> {
+        // Rate limit check
+        let mut limiter = self.rate_limiter.lock().await;
+        if !limiter.try_acquire() {
+            return Err("Rate limit exceeded. Please wait before making another request.".to_string());
+        }
+        drop(limiter);
+
         let config = self.config.lock().await;
         let mut history = self.conversation_history.lock().await;
 
