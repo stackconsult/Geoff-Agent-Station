@@ -60,6 +60,7 @@ pub enum NotificationUrgency {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum HttpMethod {
     GET,
     POST,

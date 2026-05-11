@@ -183,7 +183,7 @@ pub async fn scan_vault(vault_path: String) -> Result<Vec<VaultEntry>, String> {
         let path = entry.path();
         
         // Read file content
-        let content = fs::read_to_string(&path)
+        let content = fs::read_to_string(path)
             .map_err(|e| format!("Failed to read file {:?}: {}", path, e))?;
         
         // Parse frontmatter
@@ -232,7 +232,7 @@ pub async fn scan_vault(vault_path: String) -> Result<Vec<VaultEntry>, String> {
             .unwrap_or(false);
 
         // File metadata
-        let metadata = fs::metadata(&path).ok();
+        let metadata = fs::metadata(path).ok();
         let file_size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
         let modified_at = metadata
             .as_ref()
