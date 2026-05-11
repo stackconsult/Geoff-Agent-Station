@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
 
 interface Workflow {
   id: string;
@@ -25,6 +26,8 @@ export function WorkflowBuilder() {
     }
   }, []);
 
+  useEffect(() => { loadWorkflows(); }, [loadWorkflows]);
+
   const createWorkflow = async () => {
     const newWorkflow = {
       name: 'New Workflow',
@@ -40,16 +43,16 @@ export function WorkflowBuilder() {
       await loadWorkflows();
       setIsCreating(false);
     } catch (error) {
-      console.error('Failed to create workflow:', error);
+      toast.error(`Failed to create workflow: ${error}`);
     }
   };
 
   const executeWorkflow = async (id: string) => {
     try {
       await invoke('execute_workflow', { id });
-      alert('Workflow executed successfully!');
+      toast.success('Workflow executed successfully!');
     } catch (error) {
-      alert(`Failed to execute workflow: ${error}`);
+      toast.error(`Failed to execute workflow: ${error}`);
     }
   };
 

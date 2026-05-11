@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
 
 interface ClipboardEntry {
   id: string;
@@ -49,7 +50,7 @@ export function ClipboardHistory() {
   const copyToClipboard = async (content: string) => {
     try {
       await invoke('clipboard_set_text', { text: content });
-      alert('Copied to clipboard!');
+      toast.success('Copied to clipboard!');
     } catch (error) {
       console.error('Failed to copy:', error);
     }
@@ -74,7 +75,7 @@ export function ClipboardHistory() {
   };
 
   const clearHistory = async () => {
-    if (confirm('Are you sure you want to clear all clipboard history?')) {
+    if (window.confirm('Are you sure you want to clear all clipboard history?')) {
       try {
         await invoke('clipboard_clear_history');
         await loadHistory();

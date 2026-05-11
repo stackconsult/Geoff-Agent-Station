@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { BlockNoteViewRaw, useCreateBlockNote } from '@blocknote/react';
+import { BlockNoteEditor } from '@blocknote/core';
 import { Loader2 } from 'lucide-react';
 
 // ─── Error Types ───
@@ -20,7 +21,27 @@ export function RichEditorView({ content, onChange, onError, readOnly = false }:
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
+  // ─── Import: parse markdown to blocks BEFORE editor mounts ───
+  // tryParseMarkdownToBlocks is a static editor method — create a temp editor
+  // instance just to call it, then pass the result as initialContent.
+  const initialContent = useMemo(() => {
+    try {
+      if (!content) return undefined;
+      return BlockNoteEditor.create().tryParseMarkdownToBlocks(content);
+    } catch (e) {
+      const err: EditorError = {
+        type: 'import_failed',
+        reason: e instanceof Error ? e.message : String(e),
+      };
+      onError?.(err);
+      return undefined;
+    }
+  // content intentionally not in deps — initial load only; parent controls updates
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const editor = useCreateBlockNote({
+    initialContent,
     uploadFile: async (file) => {
       return URL.createObjectURL(file);
     },
@@ -29,28 +50,9 @@ export function RichEditorView({ content, onChange, onError, readOnly = false }:
   const contentRef = useRef(content);
   contentRef.current = content;
 
-  // ─── Import: Load markdown into editor ───
   useEffect(() => {
-    if (!editor) return;
-    if (content) {
-      try {
-        const currentContent = editor.document;
-        const isEmpty = currentContent.length === 0 ||
-          (currentContent.length === 1 && !currentContent[0].content);
-        if (isEmpty) {
-          editor.pasteMarkdown(content);
-        }
-      } catch (e) {
-        const err: EditorError = {
-          type: 'import_failed',
-          reason: e instanceof Error ? e.message : String(e),
-        };
-        onError?.(err);
-        setHasError(true);
-      }
-    }
     setIsLoading(false);
-  }, [editor]); // Intentionally omit 'content' — external updates handled by parent
+  }, [editor]);
 
   // ─── Export: Convert editor blocks → markdown on change ───
   useEffect(() => {

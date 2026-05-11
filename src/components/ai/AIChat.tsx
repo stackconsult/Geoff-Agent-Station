@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
 interface Message {
@@ -12,6 +12,8 @@ export function AIChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastRequestTimeRef = useRef<number>(0);
+  const MIN_REQUEST_INTERVAL_MS = 500;
 
   useEffect(() => {
     initializeAI();
@@ -42,8 +44,11 @@ export function AIChat() {
     }
   };
 
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     if (!input.trim() || isLoading) return;
+    const now = Date.now();
+    if (now - lastRequestTimeRef.current < MIN_REQUEST_INTERVAL_MS) return;
+    lastRequestTimeRef.current = now;
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
@@ -63,7 +68,7 @@ export function AIChat() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [input, isLoading]);
 
   const clearHistory = async () => {
     try {

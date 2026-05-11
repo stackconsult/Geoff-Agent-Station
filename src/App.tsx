@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAutoGit } from './hooks/useAutoGit';
 import { useVaultLoader } from './hooks/useVaultLoader';
 import type { AppState, VaultEntry, SidebarSelection, SyncStatus } from './types';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import { ErrorBoundary as ClassErrorBoundary } from './components/ErrorBoundary';
+import { ErrorBoundary } from 'react-error-boundary';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { VaultSelector } from './components/VaultSelector';
 import { ErrorDisplay } from './components/ErrorDisplay';
@@ -106,8 +107,12 @@ export default function App() {
     }
   }, []);
 
+  const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleContentChange = useCallback((content: string) => {
     setCurrentNoteContent(content);
+    // Clear any pending debounced save — actual save is always manual (Cmd+S)
+    if (autoSaveDebounceRef.current) clearTimeout(autoSaveDebounceRef.current);
   }, []);
 
   const handleSaveNote = useCallback(async () => {
@@ -162,23 +167,42 @@ export default function App() {
 
   if (!state.vaultPath) {
     return (
-      <ErrorBoundary>
+      <ClassErrorBoundary>
         <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
           {state.isLoading && <LoadingSpinner />}
           {state.error && <ErrorDisplay error={state.error} onDismiss={handleDismissError} />}
           <VaultSelector onVaultSelect={handleVaultSelect} isLoading={state.isLoading} />
         </div>
-      </ErrorBoundary>
+      </ClassErrorBoundary>
     );
   }
 
   return (
-    <ErrorBoundary>
+    <ClassErrorBoundary>
       <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
         {state.isLoading && <LoadingSpinner />}
         {state.error && <ErrorDisplay error={state.error} onDismiss={handleDismissError} />}
         {showAutomation ? (
-          <AutomationDashboard />
+          <ErrorBoundary
+            fallback={
+              <div className="h-screen flex items-center justify-center bg-[var(--color-bg-primary)]">
+                <div className="text-center p-8 max-w-md">
+                  <p className="text-red-400 text-lg font-semibold mb-2">Automation Dashboard Error</p>
+                  <p className="text-[var(--color-text-secondary)] text-sm mb-4">
+                    A tab component crashed. Check the console for details.
+                  </p>
+                  <button
+                    onClick={() => setShowAutomation(false)}
+                    className="px-4 py-2 bg-[var(--color-accent)] text-white rounded text-sm"
+                  >
+                    Return to Editor
+                  </button>
+                </div>
+              </div>
+            }
+          >
+            <AutomationDashboard />
+          </ErrorBoundary>
         ) : (
         <AppLayout
           sidebar={
@@ -240,7 +264,7 @@ export default function App() {
           },
         }}
       />
-    </ErrorBoundary>
+    </ClassErrorBoundary>
   );
 }
 
