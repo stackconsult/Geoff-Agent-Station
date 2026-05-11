@@ -43,6 +43,7 @@ pub async fn clipboard_clear_history() -> Result<(), String> {
     CLIPBOARD_MANAGER.clear_history()
 }
 
+#[cfg(feature = "clipboard-persistence")]
 pub fn start_clipboard_monitoring() {
     let manager = CLIPBOARD_MANAGER.clone();
     tokio::spawn(async move {

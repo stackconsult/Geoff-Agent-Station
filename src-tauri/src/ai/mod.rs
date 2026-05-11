@@ -3,8 +3,11 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 pub mod llm_client;
+#[cfg(feature = "ai-advanced")]
 pub mod prompts;
+#[cfg(feature = "ai-advanced")]
 pub mod context;
+#[cfg(feature = "ai-advanced")]
 pub mod agents;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -3,7 +3,9 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use chrono::{DateTime, Utc};
 
+#[cfg(feature = "clipboard-persistence")]
 pub mod history;
+#[cfg(feature = "clipboard-persistence")]
 pub mod monitor;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

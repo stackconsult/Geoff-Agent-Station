@@ -2,8 +2,11 @@ use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
 
+#[cfg(feature = "productivity-advanced")]
 pub mod time_tracking;
+#[cfg(feature = "productivity-advanced")]
 pub mod focus_mode;
+#[cfg(feature = "productivity-advanced")]
 pub mod pomodoro;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
