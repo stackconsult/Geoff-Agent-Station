@@ -10,7 +10,7 @@ static PRODUCTIVITY_MANAGER: Lazy<Arc<ProductivityManager>> = Lazy::new(|| {
 });
 
 #[tauri::command]
-pub fn productivity_start_tracking(
+pub async fn productivity_start_tracking(
     app_name: String,
     window_title: String,
     project: Option<String>,
@@ -19,12 +19,12 @@ pub fn productivity_start_tracking(
 }
 
 #[tauri::command]
-pub fn productivity_stop_tracking() -> Result<(), String> {
+pub async fn productivity_stop_tracking() -> Result<(), String> {
     PRODUCTIVITY_MANAGER.stop_tracking()
 }
 
 #[tauri::command]
-pub fn productivity_get_stats(start: String, end: String) -> Result<ProductivityStats, String> {
+pub async fn productivity_get_stats(start: String, end: String) -> Result<ProductivityStats, String> {
     let start_time = DateTime::parse_from_rfc3339(&start)
         .map_err(|e| format!("Invalid start time: {}", e))?
         .with_timezone(&Utc);
@@ -37,7 +37,7 @@ pub fn productivity_get_stats(start: String, end: String) -> Result<Productivity
 }
 
 #[tauri::command]
-pub fn productivity_start_pomodoro(
+pub async fn productivity_start_pomodoro(
     work_duration: i64,
     break_duration: i64,
     long_break_duration: i64,
@@ -52,11 +52,11 @@ pub fn productivity_start_pomodoro(
 }
 
 #[tauri::command]
-pub fn productivity_get_pomodoro_status() -> Result<Option<PomodoroSession>, String> {
+pub async fn productivity_get_pomodoro_status() -> Result<Option<PomodoroSession>, String> {
     PRODUCTIVITY_MANAGER.get_pomodoro_status()
 }
 
 #[tauri::command]
-pub fn productivity_stop_pomodoro() -> Result<(), String> {
+pub async fn productivity_stop_pomodoro() -> Result<(), String> {
     PRODUCTIVITY_MANAGER.stop_pomodoro()
 }
