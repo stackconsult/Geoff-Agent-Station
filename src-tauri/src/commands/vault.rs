@@ -1,6 +1,7 @@
 #![allow(dead_code)] // Tauri commands registered via generate_handler! macro + helper functions
 
 use crate::vault::{scan_vault, VaultFrontmatter};
+use std::path::PathBuf;
 
 /// Strips the leading `---\n...\n---\n` frontmatter block from a markdown string.
 /// Returns the body content after the closing `---`.
@@ -43,12 +44,24 @@ mod tests {
         assert_eq!(once, twice, "stripping twice must equal stripping once");
     }
 
+    #[test]
+    fn test_make_bak_path_replaces_extension() {
+        // "test.note.md" → "test.note.bak" (not "test.note.md.bak")
+        assert!(make_bak_path("notes/test.note.md").ends_with("test.note.bak"));
+        assert!(!make_bak_path("notes/test.note.md").contains(".md"));
+    }
+
+    #[test]
+    fn test_make_bak_path_no_extension() {
+        assert!(make_bak_path("notes/README").ends_with("README.bak"));
+    }
+
     #[tokio::test]
     async fn test_save_note_content_creates_and_cleans_backup() {
         let dir = std::env::temp_dir().join("tolaria_test_save");
         let _ = std::fs::create_dir_all(&dir);
         let path = dir.join("test_note.md");
-        let bak_path = format!("{}.bak", path.display());
+        let bak_path = make_bak_path(&path.display().to_string());
 
         // Write initial content
         std::fs::write(&path, "original content").unwrap();
@@ -80,6 +93,61 @@ mod tests {
 
         let content = std::fs::read_to_string(&path).unwrap();
         assert_eq!(content, "fresh content");
+
+        // Cleanup
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_save_note_content_orphaned_bak_replaced_and_cleaned() {
+        let dir = std::env::temp_dir().join("tolaria_test_orphaned_bak");
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("orphan_test.md");
+        let bak_path = make_bak_path(&path.display().to_string());
+
+        // Simulate an orphaned .bak from a previous crash
+        std::fs::write(&path, "current content").unwrap();
+        std::fs::write(&bak_path, "stale orphaned backup").unwrap();
+
+        // Save should succeed — the stale .bak gets overwritten with fresh backup, then cleaned
+        let result = save_note_content(path.display().to_string(), "new content".to_string()).await;
+        assert!(result.is_ok(), "save should succeed even with orphaned .bak");
+
+        let content = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(content, "new content");
+
+        // .bak should be cleaned up
+        assert!(!std::path::Path::new(&bak_path).exists(), "orphaned .bak should be cleaned up after successful save");
+
+        // Cleanup
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_update_frontmatter_creates_backup() {
+        let dir = std::env::temp_dir().join("tolaria_test_fm_backup");
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("fm_test.md");
+        let bak_path = make_bak_path(&path.display().to_string());
+
+        // Write a note with existing frontmatter
+        std::fs::write(&path, "---\ntitle: Old\n---\n# Body\n").unwrap();
+
+        let fm = VaultFrontmatter {
+            r#type: Some("New Title".to_string()),
+            ..Default::default()
+        };
+
+        let result = update_frontmatter(path.display().to_string(), fm).await;
+        assert!(result.is_ok(), "update_frontmatter should succeed");
+
+        // Verify frontmatter was updated
+        let content = std::fs::read_to_string(&path).unwrap();
+        assert!(content.contains("New Title"), "frontmatter should contain new title");
+        assert!(!content.contains("title: Old"), "old frontmatter should be replaced");
+
+        // Backup should be cleaned up on success
+        assert!(!std::path::Path::new(&bak_path).exists(), ".bak should be removed after successful update_frontmatter");
 
         // Cleanup
         let _ = std::fs::remove_dir_all(&dir);
@@ -162,15 +230,39 @@ pub async fn update_frontmatter(path: String, frontmatter: VaultFrontmatter) -> 
 
     let new_content = format!("---\n{}---\n{}", yaml, body);
 
-    std::fs::write(&path, new_content)
-        .map_err(|e| format!("Failed to write file: {}", e))?;
+    // Backup before write — same safety contract as save_note_content
+    let bak_path = make_bak_path(&path);
+    if std::path::Path::new(&path).exists() {
+        std::fs::copy(&path, &bak_path)
+            .map_err(|e| format!("Failed to create backup: {}", e))?;
+    }
 
-    Ok("Frontmatter updated".to_string())
+    match std::fs::write(&path, &new_content) {
+        Ok(_) => {
+            let _ = std::fs::remove_file(&bak_path);
+            Ok("Frontmatter updated".to_string())
+        }
+        Err(e) => {
+            if std::path::Path::new(&bak_path).exists() {
+                let _ = std::fs::copy(&bak_path, &path);
+                let _ = std::fs::remove_file(&bak_path);
+            }
+            Err(format!("Failed to write file: {}", e))
+        }
+    }
+}
+
+/// Constructs a `.bak` sibling path using PathBuf — safe on all platforms.
+/// e.g. "notes/test.note.md" → "notes/test.note.bak"
+fn make_bak_path(path: &str) -> String {
+    let mut p = PathBuf::from(path);
+    p.set_extension("bak");
+    p.display().to_string()
 }
 
 #[tauri::command]
 pub async fn save_note_content(path: String, content: String) -> Result<String, String> {
-    let bak_path = format!("{}.bak", &path);
+    let bak_path = make_bak_path(&path);
 
     // Create backup of existing file (if it exists) before overwriting
     if std::path::Path::new(&path).exists() {
