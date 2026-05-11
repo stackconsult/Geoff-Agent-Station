@@ -80,7 +80,7 @@ impl ContextWindow {
                 context.push_str(&format!("Metadata: {}\n", metadata));
             }
             context.push_str(&source.content);
-            context.push_str("\n");
+            context.push('\n');
         }
 
         context
