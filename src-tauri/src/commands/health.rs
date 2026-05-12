@@ -42,6 +42,45 @@ pub async fn check_vault(vault_path: &str) -> HealthCheckDetail {
     }
 }
 
+/// Check Ollama LLM service reachability with 3-second timeout
+pub async fn check_ollama(base_url: &str) -> HealthCheckDetail {
+    use tokio::time::{timeout, Duration};
+
+    let start = std::time::Instant::now();
+    let client = reqwest::Client::new();
+
+    match timeout(
+        Duration::from_secs(3),
+        client.get(format!("{}/api/tags", base_url)).send(),
+    ).await
+    {
+        Ok(Ok(resp)) if resp.status().is_success() => HealthCheckDetail {
+            name: "ollama".to_string(),
+            status: "pass".to_string(),
+            message: "Ollama reachable".to_string(),
+            latency_ms: start.elapsed().as_millis() as u64,
+        },
+        Ok(Ok(resp)) => HealthCheckDetail {
+            name: "ollama".to_string(),
+            status: "warn".to_string(),
+            message: format!("Ollama returned status {}", resp.status()),
+            latency_ms: start.elapsed().as_millis() as u64,
+        },
+        Ok(Err(e)) => HealthCheckDetail {
+            name: "ollama".to_string(),
+            status: "warn".to_string(),
+            message: format!("Ollama connection error: {}", e),
+            latency_ms: start.elapsed().as_millis() as u64,
+        },
+        Err(_) => HealthCheckDetail {
+            name: "ollama".to_string(),
+            status: "warn".to_string(),
+            message: "Ollama connection timeout (>3s)".to_string(),
+            latency_ms: start.elapsed().as_millis() as u64,
+        },
+    }
+}
+
 /// Overall health status response from health_check command
 #[derive(Serialize)]
 pub struct HealthStatus {
