@@ -50,6 +50,8 @@ The following items have been automatically configured using the GitHub API and 
 
 **Note:** GitHub Pages source branch was updated from "main" to "master" to match the repository's primary branch.
 
+**Note:** GitHub Pages environment deployment_branch_policy was updated to allow protected branches.
+
 ## Step 2: Verify Configuration
 
 ### 2.1 Check CI Workflow
