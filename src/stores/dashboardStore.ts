@@ -10,17 +10,26 @@ export interface DashboardConfig {
   isActive: boolean;
 }
 
+export interface VaultConfig {
+  id: string;
+  path: string;
+  name: string;
+  isActive: boolean;
+}
+
 interface DashboardState {
   activeDashboardId: string | null;
   dashboards: DashboardConfig[];
-  setActiveDashboard: (id: string) => void;
-  addDashboard: (type: DashboardType) => void;
-  removeDashboard: (id: string) => void;
+  vaultConfigs: VaultConfig[];
+  setVaultConfigs: (configs: VaultConfig[]) => void;
+  addVaultConfig: (config: VaultConfig) => void;
+  removeVaultConfig: (id: string) => void;
 }
 
 export const useDashboardStore = create<DashboardState>((set) => ({
   activeDashboardId: 'editor-1',
   dashboards: [{ id: 'editor-1', type: 'editor', title: 'Editor', icon: '📝', isActive: true }],
+  vaultConfigs: [],
   
   setActiveDashboard: (id) => set((state) => ({
     activeDashboardId: id,
@@ -33,11 +42,22 @@ export const useDashboardStore = create<DashboardState>((set) => ({
       type, 
       title: type === 'ai' ? 'AI' : type === 'automation' ? 'Automation' : 'Editor', 
       icon: type === 'ai' ? '🤖' : type === 'automation' ? '⚙️' : '📝', 
-      isActive: false 
+      isActive: false
     }]
   })),
   
   removeDashboard: (id) => set((state) => ({
-    dashboards: state.dashboards.filter((d) => d.id !== id)
+    dashboards: state.dashboards.filter((d) => d.id !== id),
+    activeDashboardId: state.activeDashboardId === id ? null : state.activeDashboardId
+  })),
+  
+  setVaultConfigs: (configs) => set({ vaultConfigs: configs }),
+  
+  addVaultConfig: (config) => set((state) => ({
+    vaultConfigs: [...state.vaultConfigs, config]
+  })),
+  
+  removeVaultConfig: (id) => set((state) => ({
+    vaultConfigs: state.vaultConfigs.filter((v) => v.id !== id)
   }))
 }));
