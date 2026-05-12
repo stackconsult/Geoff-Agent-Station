@@ -182,3 +182,53 @@ pub struct HealthCheckDetail {
     /// Time taken to execute the check in milliseconds
     pub latency_ms: u64,
 }
+
+/// Main health check command — runs vault, Ollama, and disk checks in parallel
+#[tauri::command]
+pub async fn health_check(
+    vault_path: String,
+    ollama_base_url: String,
+) -> Result<HealthStatus, String> {
+    // Run all checks in parallel for efficiency
+    let (vault, ollama, disk) = tokio::join!(
+        check_vault(&vault_path),
+        check_ollama(&ollama_base_url),
+        check_disk_space(&vault_path),
+    );
+
+    // Determine overall status based on individual results
+    let overall = if vault.status == "fail" || disk.status == "critical" {
+        "unhealthy"
+    } else if ollama.status == "warn" || disk.status == "warning" {
+        "degraded"
+    } else {
+        "healthy"
+    };
+
+    // Parse vault note count from message (e.g., "42 notes found")
+    let vault_note_count = vault
+        .message
+        .split_whitespace()
+        .next()
+        .and_then(|n| n.parse().ok())
+        .unwrap_or(0);
+
+    // Parse disk space from message (e.g., "12.5 GB free")
+    let disk_space_gb = disk
+        .message
+        .split_whitespace()
+        .next()
+        .and_then(|n| n.parse().ok())
+        .unwrap_or(0.0);
+
+    Ok(HealthStatus {
+        overall: overall.to_string(),
+        vault_accessible: vault.status == "pass",
+        vault_note_count,
+        ollama_reachable: ollama.status == "pass",
+        ollama_version: None, // Could be extracted from /api/version
+        disk_space_gb,
+        disk_space_status: disk.status.clone(),
+        checks: vec![vault, ollama, disk],
+    })
+}
