@@ -12,6 +12,7 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 import { VaultSelector } from './components/VaultSelector';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { SettingsPanel } from './components/SettingsPanel';
+import { RestoreBackupDialog } from './components/RestoreBackupDialog';
 import { AppLayout, Sidebar, NoteList, Editor, AiPanel, StatusBar } from './components/layout';
 import { AutomationDashboard } from './pages/AutomationDashboard';
 import { Toaster, toast } from 'sonner';
@@ -36,6 +37,7 @@ export default function App() {
   // Local state only for localStorage vault path persistence and settings panel
   const [localVaultPath, setLocalVaultPath] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showBackups, setShowBackups] = useState(false);
 
   // Load vault path from localStorage on mount — if none saved, VaultSelector appears
   useEffect(() => {
@@ -233,12 +235,22 @@ created: ${new Date().toISOString()}
               onOpenVault={handleChangeVault}
               onOpenSettings={() => setShowSettings(true)}
               onToggleAutomation={() => setShowAutomation(!showAutomation)}
+              onOpenBackups={() => setShowBackups(true)}
             />
           }
         />
         )}
       </div>
       <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <RestoreBackupDialog
+        isOpen={showBackups}
+        onClose={() => setShowBackups(false)}
+        vaultPath={vaultPath || ''}
+        onRestore={(originalPath) => {
+          toast.success(`Restored: ${originalPath.split(/[\\/]/).pop()}`);
+          loadNotes(vaultPath || '');
+        }}
+      />
       <Toaster
         position="bottom-right"
         toastOptions={{

@@ -12,16 +12,18 @@ interface RestoreBackupDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onRestore: (originalPath: string) => void;
+  vaultPath: string;
 }
 
-export function RestoreBackupDialog({ isOpen, onClose, onRestore }: RestoreBackupDialogProps) {
+export function RestoreBackupDialog({ isOpen, onClose, onRestore, vaultPath }: RestoreBackupDialogProps) {
   const [backups, setBackups] = useState<BackupFile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const loadBackups = async () => {
+    if (!vaultPath) return;
     setIsLoading(true);
     try {
-      const files: BackupFile[] = await invoke('list_backup_files');
+      const files: BackupFile[] = await invoke('list_backup_files', { vaultPath });
       setBackups(files);
     } catch (error) {
       console.error('Failed to load backups:', error);
@@ -34,7 +36,7 @@ export function RestoreBackupDialog({ isOpen, onClose, onRestore }: RestoreBacku
     try {
       await invoke('restore_from_backup', { backupPath, originalPath });
       onRestore(originalPath);
-      onClose();
+      loadBackups(); // Refresh list after restore
     } catch (error) {
       console.error('Failed to restore backup:', error);
     }
