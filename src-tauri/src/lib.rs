@@ -91,6 +91,9 @@ pub fn run() {
             commands::ai::ai_search_docs,
             commands::ai::ai_list_models,
             commands::ai::ai_switch_model,
+            commands::ai::ai_vector_add_document,
+            commands::ai::ai_vector_search,
+            commands::ai::ai_vector_delete,
             // Clipboard commands
             commands::clipboard::clipboard_get_text,
             commands::clipboard::clipboard_set_text,

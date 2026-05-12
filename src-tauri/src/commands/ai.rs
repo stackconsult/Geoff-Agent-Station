@@ -134,3 +134,18 @@ pub async fn ai_list_models() -> Result<Vec<AIModelInfo>, String> {
 pub async fn ai_switch_model(model_id: String) -> Result<(), String> {
     Ok(())
 }
+
+#[tauri::command]
+pub async fn ai_vector_add_document(doc_path: String) -> Result<String, String> {
+    Ok("doc_id".to_string())
+}
+
+#[tauri::command]
+pub async fn ai_vector_search(query: String) -> Result<Vec<String>, String> {
+    Ok(vec![])
+}
+
+#[tauri::command]
+pub async fn ai_vector_delete(doc_id: String) -> Result<(), String> {
+    Ok(())
+}
