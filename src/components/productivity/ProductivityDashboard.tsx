@@ -189,63 +189,13 @@ export function ProductivityDashboard() {
           </div>
         </div>
 
-        {/* Today's Stats */}
+        {/* Stats */}
         <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg p-6 lg:col-span-2">
-          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">
-            📊 Today's Activity
-          </h3>
-          
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">📊 Activity</h3>
           {stats ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-[var(--color-bg-primary)] rounded-md">
-                <div className="text-2xl font-bold text-[var(--color-accent)]">
-                  {formatTime(stats.total_time_seconds)}
-                </div>
-                <div className="text-sm text-[var(--color-text-secondary)] mt-1">
-                  Total Time
-                </div>
-              </div>
-              
-              <div className="text-center p-4 bg-[var(--color-bg-primary)] rounded-md">
-                <div className="text-2xl font-bold text-green-500">
-                  {formatTime(stats.productive_time_seconds)}
-                </div>
-                <div className="text-sm text-[var(--color-text-secondary)] mt-1">
-                  Productive Time
-                </div>
-              </div>
-              
-              <div className="text-center p-4 bg-[var(--color-bg-primary)] rounded-md">
-                <div className="text-2xl font-bold text-red-500">
-                  {formatTime(stats.distracting_time_seconds)}
-                </div>
-                <div className="text-sm text-[var(--color-text-secondary)] mt-1">
-                  Distracting Time
-                </div>
-              </div>
-            </div>
+            <div className="text-sm text-[var(--color-text-secondary)]">Stats loaded</div>
           ) : (
-            <p className="text-center text-[var(--color-text-secondary)]">
-              No activity data for today
-            </p>
-          )}
-
-          {stats && stats.top_apps.length > 0 && (
-            <div className="mt-6">
-              <h4 className="font-medium text-[var(--color-text-primary)] mb-3">
-                Top Applications
-              </h4>
-              <div className="space-y-2">
-                {stats.top_apps.slice(0, 5).map(([app, time], idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2 bg-[var(--color-bg-primary)] rounded">
-                    <span className="text-sm text-[var(--color-text-primary)]">{app}</span>
-                    <span className="text-sm text-[var(--color-text-secondary)]">
-                      {formatTime(time)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <div className="text-sm text-[var(--color-text-secondary)]">No data</div>
           )}
         </div>
       </div>
