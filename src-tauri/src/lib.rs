@@ -55,7 +55,8 @@ pub fn run() {
             commands::vault::update_frontmatter,
             commands::vault::list_backup_files,
             commands::vault::restore_from_backup,
-            commands::vault::health_check,
+            // Health commands
+            commands::health::health_check,
             // System commands
             system::get_machine_specs,
             system::get_performance_tier,

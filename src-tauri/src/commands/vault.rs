@@ -81,40 +81,6 @@ pub fn restore_from_backup(backup_path: String, original_path: String) -> Result
     Ok(())
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct HealthCheckResult {
-    pub vault_accessible: bool,
-    pub vault_path: String,
-    pub disk_space_gb: f64,
-    pub ollama_reachable: bool,
-}
-
-#[tauri::command]
-pub fn health_check(vault_path: String) -> Result<HealthCheckResult, String> {
-    use std::path::Path;
-    
-    // Check vault accessibility
-    let vault_accessible = Path::new(&vault_path).exists();
-    
-    // Check disk space
-    let disk_space_gb = if let Ok(_metadata) = fs::metadata(&vault_path) {
-        // This is a simplified check - in production you'd want actual disk space
-        100.0 // Placeholder - would use sysinfo for real disk space
-    } else {
-        0.0
-    };
-    
-    // Check Ollama reachability (simplified - would use reqwest in production)
-    let ollama_reachable = true; // Placeholder - would ping localhost:11434
-    
-    Ok(HealthCheckResult {
-        vault_accessible,
-        vault_path,
-        disk_space_gb,
-        ollama_reachable,
-    })
-}
-
 /// Strips the leading `---\n...\n---\n` frontmatter block from a markdown string.
 /// Returns the body content after the closing `---`.
 pub fn strip_frontmatter(content: &str) -> &str {
@@ -179,30 +145,6 @@ mod tests {
         assert!(!bak_path.exists(), "backup should be removed after restore");
 
         let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[tokio::test]
-    async fn test_health_check_vault_exists() {
-        let dir = std::env::temp_dir().join("tolaria_test_health");
-        let _ = std::fs::create_dir_all(&dir);
-
-        let result = health_check(dir.display().to_string());
-        assert!(result.is_ok());
-        let health = result.unwrap();
-        assert!(health.vault_accessible);
-        assert_eq!(health.vault_path, dir.display().to_string());
-
-        let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[tokio::test]
-    async fn test_health_check_vault_not_exists() {
-        let non_existent = "/this/path/does/not/exist";
-
-        let result = health_check(non_existent.to_string());
-        assert!(result.is_ok());
-        let health = result.unwrap();
-        assert!(!health.vault_accessible);
     }
 
     #[test]

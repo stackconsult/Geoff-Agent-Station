@@ -91,7 +91,7 @@ pub async fn check_disk_space(vault_path: &str) -> HealthCheckDetail {
     let drive = vault_path.chars().next().map(|c| c.to_string()).unwrap_or_else(|| "C".to_string());
 
     let output = Command::new("wmic")
-        .args(&[
+        .args([
             "logicaldisk",
             "where",
             &format!("DeviceID='{}:'", drive),
