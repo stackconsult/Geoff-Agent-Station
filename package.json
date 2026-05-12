@@ -33,12 +33,12 @@
     "@tauri-apps/plugin-opener": "^2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.468.0",
+    "lucide-react": "^1.14.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-error-boundary": "^6.1.1",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^2.6.0",
+    "tailwind-merge": "^3.6.0",
     "zustand": "^5.0.13"
   },
   "devDependencies": {
@@ -46,13 +46,13 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^25.6.2",
+    "@types/node": "^25.7.0",
     "@types/react": "^19.2.14",
-    "@vitejs/plugin-react": "^4.6.0",
+    "@vitejs/plugin-react": "^6.0.1",
     "@vitest/ui": "^4.1.6",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
-    "vite": "^7.0.4",
+    "vite": "^8.0.12",
     "vitest": "^4.1.6"
   }
 }
