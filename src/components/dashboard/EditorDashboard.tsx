@@ -2,6 +2,7 @@ import { AppLayout, Sidebar, NoteList, Editor, StatusBar } from '../layout';
 import { useVaultStore } from '../../stores/vaultStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useEditorStore } from '../../stores/editorStore';
+import { eventBus } from '../../utils/eventBus';
 
 export function EditorDashboard() {
   const { vaultPath, notes, currentNote, loadNotes, selectNote } = useVaultStore();
@@ -10,6 +11,14 @@ export function EditorDashboard() {
 
   const handleNoteSelect = async (note: any) => {
     selectNote(note);
+    eventBus.emit('note_selected', { type: 'note_selected', noteId: note.path, notePath: note.path });
+  };
+
+  const handleContentChange = (newContent: string) => {
+    setContent(newContent);
+    if (currentNote) {
+      eventBus.emit('note_updated', { type: 'note_updated', noteId: currentNote.path, content: newContent });
+    }
   };
 
   return (
@@ -37,7 +46,7 @@ export function EditorDashboard() {
           note={currentNote ? { id: currentNote.path, title: currentNote.title, content, path: currentNote.path.split(/[\\/]/), isLoading: false } : null}
           mode="markdown"
           onModeChange={() => {}}
-          onContentChange={setContent}
+          onContentChange={handleContentChange}
           onSave={() => {}}
         />
       }
