@@ -3,11 +3,13 @@ import { AIChat } from '../ai/AIChat';
 import { AIModelSelector } from '../ai/AIModelSelector';
 import { AIContextPanel } from '../ai/AIContextPanel';
 import { AIChatHistory } from '../ai/AIChatHistory';
+import { AgentRegistry } from '../agents/AgentRegistry';
 
 export function AIDashboard() {
   const [selectedModel, setSelectedModel] = useState('ollama-llama3');
   const [showContext, setShowContext] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showAgents, setShowAgents] = useState(false);
 
   return (
     <div className="h-full flex flex-col bg-[var(--color-bg-primary)]">
@@ -29,6 +31,12 @@ export function AIDashboard() {
           >
             History
           </button>
+          <button
+            onClick={() => setShowAgents(!showAgents)}
+            className={`px-3 py-1.5 text-sm rounded ${showAgents ? 'bg-[var(--color-accent)] text-white' : 'hover:bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)]'}`}
+          >
+            Agents
+          </button>
         </div>
       </div>
       <div className="flex-1 flex overflow-hidden">
@@ -37,6 +45,7 @@ export function AIDashboard() {
         </div>
         {showContext && <AIContextPanel isOpen={showContext} onClose={() => setShowContext(false)} />}
         {showHistory && <AIChatHistory isOpen={showHistory} onClose={() => setShowHistory(false)} onLoadConversation={() => {}} />}
+        {showAgents && <AgentRegistry />}
       </div>
     </div>
   );
