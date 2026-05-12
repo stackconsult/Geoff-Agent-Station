@@ -13,6 +13,7 @@ import { VaultSelector } from './components/VaultSelector';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { SettingsPanel } from './components/SettingsPanel';
 import { RestoreBackupDialog } from './components/RestoreBackupDialog';
+import type { HealthStatus } from './components/HealthIndicator';
 import { AppLayout, Sidebar, NoteList, Editor, AiPanel, StatusBar } from './components/layout';
 import { AutomationDashboard } from './pages/AutomationDashboard';
 import { Toaster, toast } from 'sonner';
@@ -38,6 +39,7 @@ export default function App() {
   const [localVaultPath, setLocalVaultPath] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showBackups, setShowBackups] = useState(false);
+  const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
 
   // Load vault path from localStorage on mount — if none saved, VaultSelector appears
   useEffect(() => {
@@ -58,6 +60,35 @@ export default function App() {
 
   useVaultLoader(vaultPath);
   useAutoGit(vaultPath);
+
+  // Health check polling every 30 seconds
+  useEffect(() => {
+    const checkHealth = async () => {
+      if (!vaultPath) return;
+      try {
+        const status = await invoke<HealthStatus>('health_check', {
+          vaultPath,
+          ollamaBaseUrl: 'http://localhost:11434',
+        });
+        setHealthStatus(status);
+      } catch (error) {
+        console.error('Health check failed:', error);
+        setHealthStatus({
+          overall: 'unhealthy',
+          vault_accessible: false,
+          vault_note_count: 0,
+          ollama_reachable: false,
+          disk_space_gb: 0,
+          disk_space_status: 'critical',
+          checks: [],
+        });
+      }
+    };
+
+    checkHealth();
+    const id = setInterval(checkHealth, 30000);
+    return () => clearInterval(id);
+  }, [vaultPath]);
 
   const handleVaultSelect = (path: string) => {
     loadNotes(path);
@@ -236,6 +267,8 @@ created: ${new Date().toISOString()}
               onOpenSettings={() => setShowSettings(true)}
               onToggleAutomation={() => setShowAutomation(!showAutomation)}
               onOpenBackups={() => setShowBackups(true)}
+              healthStatus={healthStatus}
+              onHealthCheck={() => toast.info(`Health: ${healthStatus?.overall || 'unknown'}`)}
             />
           }
         />
