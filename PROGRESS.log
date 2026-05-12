@@ -60,3 +60,8 @@ DEPLOYMENT GATE: All Phase 1 complete + CI green
 [2026-05-11 21:55 UTC-6] 1.2.3 COMPLETE - check_ollama with timeout (+39 lines)
 [2026-05-11 22:00 UTC-6] 1.2.4 COMPLETE - check_disk_space Windows WMIC (+68 lines)
 [2026-05-11 22:03 UTC-6] 1.2.5 COMPLETE - health_check command with tokio::join (+50 lines)
+[2026-05-11 22:12 UTC-6] 1.2.6 COMPLETE - Registered in lib.rs, removed placeholder (+15/-65 lines)
+[2026-05-11 22:17 UTC-6] 1.2.7 COMPLETE - HealthIndicator.tsx (+54 lines)
+[2026-05-11 22:22 UTC-6] 1.2.8 COMPLETE - StatusBar integration (+8 lines)
+[2026-05-11 22:28 UTC-6] 1.2.9 COMPLETE - App.tsx polling (+33 lines)
+[2026-05-11 22:28 UTC-6] CHUNK 1.2 (K3) COMPLETE - All 9 sub-chunks committed
