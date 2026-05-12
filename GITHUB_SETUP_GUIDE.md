@@ -2,60 +2,58 @@
 
 This guide provides step-by-step instructions for configuring the GitHub repository `stackconsult/Geoff-Agent-Station` for continuous integration and deployment.
 
-## ✅ Automated Configuration (Completed via API)
+## ✅ Automated Configuration (Completed via API + GH CLI)
 
-The following items have been automatically configured using the GitHub API:
+The following items have been automatically configured using the GitHub API and GitHub CLI:
 
 ### 1. GitHub Environment
 - **Environment Name:** geoffswindowsenv
 - **Environment ID:** 15241587379
-- **Status:** Created successfully
+- **Status:** Created successfully (API)
 - **URL:** https://github.com/stackconsult/Geoff-Agent-Station/deployments/activity_log?environments_filter=geoffswindowsenv
 
 ### 2. Environment Variables
 - **Variable Name:** geoffswindowsenv1
 - **Value:** geoffswindowsenv
-- **Status:** Added successfully
+- **Status:** Added successfully (API)
 
-### 3. SSH Deploy Key
+### 3. Environment Secrets
+- **Secret Name:** geoffswindowsrepo
+- **Value:** geoffswindowsrepo
+- **Status:** Added successfully (GH CLI)
+
+### 4. Dependabot Secrets
+- **Secret Name:** geffswindowsrepo2
+- **Value:** geoffswindowsrepo
+- **Status:** Added successfully (GH CLI)
+
+### 5. SSH Deploy Key
 - **Key ID:** 151266172
 - **Title:** GitHub Pages Deploy Key
 - **Read Only:** false (write access enabled)
-- **Status:** Added successfully
+- **Status:** Added successfully (API)
 
-### 4. GitHub Pages
+### 6. GitHub Pages
 - **Status:** Already enabled
 - **Source:** GitHub Actions (configured via workflow)
 
-### 5. Auto-Link References
+### 7. Auto-Link References
 - **Key Prefix:** GH-
 - **URL Template:** https://github.com/<user>/<repo>/issues/<num>
-- **Status:** Configured successfully
+- **Status:** Configured successfully (API)
 
 ## 🔴 Manual Configuration Required (Remaining Steps)
 
-The following items require manual configuration via GitHub UI (encryption required for secrets):
+The following item requires manual configuration via GitHub UI:
 
-### 1. Add Environment Secret
-1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/settings/environments/geoffswindowsenv
-2. Click "Add secret"
-3. Name: `geoffswindowsrepo`
-4. Value: `geoffswindowsrepo`
-5. Click "Add secret"
-
-### 2. Configure Codespaces Variable
+### 1. Configure Codespaces Variable
 1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/settings/codespaces
 2. Click "Add variable"
 3. Name: `geffswindowsrepo1`
-4. Value: `geffswindowsrepo`
+4. Value: `geoffswindowsrepo`
 5. Click "Add variable"
 
-### 3. Add Dependabot Secret
-1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/settings/secrets/dependabot
-2. Click "Add secret"
-3. Name: `geffswindowsrepo2`
-4. Value: `geffswindowsrepo`
-5. Click "Add secret"
+**Note:** API endpoint for Codespaces variables is not available via GitHub REST API or GH CLI.
 
 ## Step 2: Verify Configuration
 
@@ -73,14 +71,14 @@ The following items require manual configuration via GitHub UI (encryption requi
 
 | Component | Variable/Secret Name | Value | Status |
 |-----------|---------------------|-------|--------|
-| Environment (Actions) | geoffswindowsenv1 | geoffswindowsenv | ✅ Completed via API |
-| Environment (Actions) | geoffswindowsrepo | geoffswindowsrepo | 🔴 Manual (encryption required) |
-| Codespaces | geffswindowsrepo1 | geoffswindowsrepo | 🔴 Manual |
-| Dependabot | geffswindowsrepo2 | geffswindowsrepo | 🔴 Manual (encryption required) |
-| SSH Keys | github_deploy_key.pub | (public key) | ✅ Completed via API |
-| SSH Keys | github_deploy_key | (private key) | ✅ Local storage only |
-| GitHub Pages | Source | GitHub Actions | ✅ Already enabled |
-| Auto-Link References | GH- prefix | GitHub issues | ✅ Completed via API |
+| Environment (Actions) | geoffswindowsenv1 | geoffswindowsenv | Completed via API |
+| Environment (Actions) | geoffswindowsrepo | geoffswindowsrepo | Completed via GH CLI |
+| Codespaces | geffswindowsrepo1 | geoffswindowsrepo | Manual (API not available) |
+| Dependabot | geffswindowsrepo2 | geoffswindowsrepo | Completed via GH CLI |
+| SSH Keys | github_deploy_key.pub | (public key) | Completed via API |
+| SSH Keys | github_deploy_key | (private key) | Local storage only |
+| GitHub Pages | Source | GitHub Actions | Already enabled |
+| Auto-Link References | GH- prefix | GitHub issues | Completed via API |
 
 ## Next Steps
 
