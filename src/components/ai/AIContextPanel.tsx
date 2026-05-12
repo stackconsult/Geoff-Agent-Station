@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 
 interface ContextItem {
   id: string;
@@ -16,6 +17,15 @@ interface AIContextPanelProps {
 
 export function AIContextPanel({ isOpen, onClose }: AIContextPanelProps) {
   const [contextItems, setContextItems] = useState<ContextItem[]>([]);
+
+  const handleAddDocument = async () => {
+    try {
+      const docId = await invoke<string>('ai_vector_add_document', { docPath: '' });
+      console.log('Document added:', docId);
+    } catch (e) {
+      console.error('Failed to add document:', e);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -45,7 +55,7 @@ export function AIContextPanel({ isOpen, onClose }: AIContextPanelProps) {
         )}
       </div>
       <div className="p-4 border-t border-[var(--color-border)]">
-        <button onClick={() => {}} className="w-full px-3 py-2 text-sm bg-[var(--color-accent)] text-white rounded">
+        <button onClick={handleAddDocument} className="w-full px-3 py-2 text-sm bg-[var(--color-accent)] text-white rounded">
           + Add Document
         </button>
       </div>
