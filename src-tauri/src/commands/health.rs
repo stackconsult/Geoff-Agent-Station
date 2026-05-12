@@ -81,6 +81,74 @@ pub async fn check_ollama(base_url: &str) -> HealthCheckDetail {
     }
 }
 
+/// Check disk space for Windows vault drive
+#[cfg(target_os = "windows")]
+pub async fn check_disk_space(vault_path: &str) -> HealthCheckDetail {
+    use std::process::Command;
+    let start = std::time::Instant::now();
+
+    // Extract drive letter from vault path (e.g., "C:\\path" -> "C:")
+    let drive = vault_path.chars().next().map(|c| c.to_string()).unwrap_or_else(|| "C".to_string());
+
+    let output = Command::new("wmic")
+        .args(&[
+            "logicaldisk",
+            "where",
+            &format!("DeviceID='{}:'", drive),
+            "get",
+            "FreeSpace,Size",
+            "/value",
+        ])
+        .output();
+
+    match output {
+        Ok(out) if out.status.success() => {
+            let text = String::from_utf8_lossy(&out.stdout);
+
+            // Parse FreeSpace=value from WMIC output
+            let free_bytes = text
+                .lines()
+                .find(|l| l.contains("FreeSpace"))
+                .and_then(|l| l.split('=').nth(1))
+                .and_then(|v| v.trim().parse::<u64>().ok())
+                .unwrap_or(0);
+
+            let free_gb = free_bytes as f64 / 1_073_741_824.0;
+            let status = if free_gb > 5.0 {
+                "ok"
+            } else if free_gb > 1.0 {
+                "warning"
+            } else {
+                "critical"
+            };
+
+            HealthCheckDetail {
+                name: "disk".to_string(),
+                status: status.to_string(),
+                message: format!("{:.1} GB free", free_gb),
+                latency_ms: start.elapsed().as_millis() as u64,
+            }
+        }
+        _ => HealthCheckDetail {
+            name: "disk".to_string(),
+            status: "warn".to_string(),
+            message: "Could not determine disk space".to_string(),
+            latency_ms: start.elapsed().as_millis() as u64,
+        },
+    }
+}
+
+/// Non-Windows placeholder for disk space check
+#[cfg(not(target_os = "windows"))]
+pub async fn check_disk_space(_vault_path: &str) -> HealthCheckDetail {
+    HealthCheckDetail {
+        name: "disk".to_string(),
+        status: "warn".to_string(),
+        message: "Disk check not implemented for this platform".to_string(),
+        latency_ms: 0,
+    }
+}
+
 /// Overall health status response from health_check command
 #[derive(Serialize)]
 pub struct HealthStatus {
