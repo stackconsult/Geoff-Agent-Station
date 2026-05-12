@@ -1,15 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AIChat } from '../ai/AIChat';
 import { AIModelSelector } from '../ai/AIModelSelector';
 import { AIContextPanel } from '../ai/AIContextPanel';
 import { AIChatHistory } from '../ai/AIChatHistory';
 import { AgentRegistry } from '../agents/AgentRegistry';
+import { eventBus } from '../../utils/eventBus';
 
 export function AIDashboard() {
   const [selectedModel, setSelectedModel] = useState('ollama-llama3');
   const [showContext, setShowContext] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showAgents, setShowAgents] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<{ id: string; path: string } | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = eventBus.on('note_selected', (data) => {
+      const eventData = data as { type: 'note_selected'; noteId: string; notePath: string };
+      setSelectedNote({ id: eventData.noteId, path: eventData.notePath });
+    });
+
+    return unsubscribe;
+  }, []);
 
   return (
     <div className="h-full flex flex-col bg-[var(--color-bg-primary)]">

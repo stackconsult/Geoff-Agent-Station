@@ -1,11 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { VisualWorkflowBuilder } from '../automation/VisualWorkflowBuilder';
 import { WorkflowExecutionMonitor } from '../automation/WorkflowExecutionMonitor';
 import { WorkflowBuilder } from '../automation/WorkflowBuilder';
+import { eventBus } from '../../utils/eventBus';
 
 export function AutomationDashboard() {
   const [view, setView] = useState<'visual' | 'list' | 'monitor'>('visual');
   const [executionSteps, setExecutionSteps] = useState([]);
+
+  useEffect(() => {
+    const unsubscribeNote = eventBus.on('note_selected', (data) => {
+      console.log('AutomationDashboard received note_selected:', data);
+    });
+
+    const unsubscribeAgent = eventBus.on('agent_started', (data) => {
+      console.log('AutomationDashboard received agent_started:', data);
+    });
+
+    return () => {
+      unsubscribeNote();
+      unsubscribeAgent();
+    };
+  }, []);
 
   return (
     <div className="h-full flex flex-col bg-[var(--color-bg-primary)]">
