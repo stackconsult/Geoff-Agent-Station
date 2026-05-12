@@ -17,11 +17,11 @@
 | **J** | AI streaming + settings panel | 8cbee37 | Streaming + rate limiting |
 | **L** | AI context + RAG | 8cbee37 | Context module enabled |
 | **K1** | RestoreBackupDialog | **d68a9a3** | Wired to StatusBar + App |
+| **K3** | Healthcheck command | **EXISTING** | health.rs complete, registered in lib.rs |
 
 ### 🔴 CRITICAL INCOMPLETE (Deployment Blockers)
 | Chunk | Item | Why Blocker | Risk if Skipped |
 |-------|------|-------------|-----------------|
-| **1.2** | K3: Healthcheck command | Production monitoring required | Blind deployments, no ops visibility |
 | **1.3** | G1-G5: Runtime smoke tests | User acceptance unverified | Critical UX failures in production |
 | **2.0** | CI pipeline green | Deployment gate | Cannot ship without CI |
 
