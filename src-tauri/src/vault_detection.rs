@@ -156,3 +156,40 @@ fn get_last_modified(dir: &std::path::Path) -> String {
         format!("{}w ago", secs / 604800)
     }
 }
+
+#[tauri::command]
+pub async fn pick_folder_dialog(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    
+    let result = app.dialog().file()
+        .set_title("Select Obsidian Vault Folder")
+        .set_directory(dirs::home_dir().unwrap_or_default())
+        .blocking_pick_folder();
+    
+    // FilePath is an enum - handle both variants
+    Ok(result.map(|p| match p {
+        tauri_plugin_dialog::FilePath::Path(path) => path.to_string_lossy().to_string(),
+        tauri_plugin_dialog::FilePath::Url(url) => url.to_file_path()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|_| url.to_string()),
+    }))
+}
+
+#[tauri::command]
+pub async fn validate_vault_path(path: String) -> Result<bool, String> {
+    let path = std::path::Path::new(&path);
+    
+    if !path.exists() {
+        return Ok(false);
+    }
+    
+    if !path.is_dir() {
+        return Ok(false);
+    }
+    
+    // Check if directory contains any .md files
+    match count_markdown_files(path) {
+        Ok(count) => Ok(count > 0),
+        Err(_) => Ok(false),
+    }
+}

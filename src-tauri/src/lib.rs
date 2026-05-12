@@ -32,6 +32,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             greet,
             // Vault commands
@@ -64,6 +65,8 @@ pub fn run() {
             vault_detection::detect_obsidian_vaults,
             vault_detection::start_file_watcher,
             vault_detection::stop_file_watcher,
+            vault_detection::pick_folder_dialog,
+            vault_detection::validate_vault_path,
             // Automation commands
             automation::commands::create_workflow,
             automation::commands::list_workflows,
