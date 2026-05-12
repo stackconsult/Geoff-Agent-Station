@@ -115,3 +115,22 @@ pub async fn ai_update_config(config: AIConfig) -> Result<(), String> {
         Err("AI engine not initialized".to_string())
     }
 }
+
+#[derive(serde::Serialize)]
+pub struct AIModelInfo {
+    pub id: String,
+    pub name: String,
+    pub provider: String,
+    pub capabilities: Vec<String>,
+    pub context_window: usize,
+}
+
+#[tauri::command]
+pub async fn ai_list_models() -> Result<Vec<AIModelInfo>, String> {
+    Ok(vec![])
+}
+
+#[tauri::command]
+pub async fn ai_switch_model(model_id: String) -> Result<(), String> {
+    Ok(())
+}
