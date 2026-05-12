@@ -1,4 +1,5 @@
-# Ultimate Desktop Work Automation System
+# Geoff-Agent-Station
+Personal Automation Workstation
 
 A comprehensive desktop automation platform built with Tauri, React, and Rust. Automate your workflows, boost productivity, and integrate AI-powered tools into your daily work.
 
@@ -249,7 +250,7 @@ This is a personal automation system, but feel free to fork and customize for yo
 
 ## License
 
-MIT
+The Unlicense
 
 ## Acknowledgments
 
@@ -269,4 +270,4 @@ See documentation files for detailed guides and troubleshooting:
 
 ---
 
-**Start automating your workflow today!** 
+**Start automating your workflow today!**
