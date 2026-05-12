@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 const host = process.env.TAURI_DEV_HOST;
+const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
@@ -12,6 +13,17 @@ export default defineConfig(async () => ({
     exclude: ['node_modules', 'src-tauri'],
   },
   plugins: [react()],
+
+  // Use web entry point for GitHub Pages builds
+  ...(isGitHubPages ? {
+    build: {
+      rollupOptions: {
+        input: {
+          main: './index.html',
+        },
+      },
+    },
+  } : {}),
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
