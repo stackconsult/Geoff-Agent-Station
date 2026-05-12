@@ -45,8 +45,8 @@ export function AIContextPanel({ isOpen, onClose }: AIContextPanelProps) {
         )}
       </div>
       <div className="p-4 border-t border-[var(--color-border)]">
-        <button className="w-full px-3 py-2 text-sm bg-[var(--color-accent)] text-white rounded hover:opacity-90">
-          + Add Context
+        <button onClick={() => {}} className="w-full px-3 py-2 text-sm bg-[var(--color-accent)] text-white rounded">
+          + Add Document
         </button>
       </div>
     </div>
