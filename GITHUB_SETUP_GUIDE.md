@@ -1,103 +1,90 @@
-# GitHub Environment Setup Guide
+# GitHub Setup Guide
 
-## Prerequisites
-- GitHub repository: stackconsult/Geoff-Agent-Station
-- Environment name: geoffswindowsenv
-- SSH deploy keys generated locally (stored in ~/.ssh/github_deploy_key)
+This guide provides step-by-step instructions for configuring the GitHub repository `stackconsult/Geoff-Agent-Station` for continuous integration and deployment.
 
-## Step 1: Configure GitHub Environment
+## ✅ Automated Configuration (Completed via API)
 
-### 1.1 Create Environment
-1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/settings/environments/new
-2. Name: `geoffswindowsenv`
-3. Description: `Production deployment environment`
-4. Click "Create environment"
+The following items have been automatically configured using the GitHub API:
 
-### 1.2 Add Environment Variables
-1. In the environment settings, click "Add variable"
-2. Name: `geoffswindowsenv1`
-3. Value: `geoffswindowsenv`
-4. Click "Add variable"
+### 1. GitHub Environment
+- **Environment Name:** geoffswindowsenv
+- **Environment ID:** 15241587379
+- **Status:** Created successfully
+- **URL:** https://github.com/stackconsult/Geoff-Agent-Station/deployments/activity_log?environments_filter=geoffswindowsenv
 
-### 1.3 Add Environment Secrets
-1. In the environment settings, click "Add secret"
-2. Name: `geoffswindowsrepo`
-3. Value: `geoffswindowsrepo`
-4. Click "Add secret"
+### 2. Environment Variables
+- **Variable Name:** geoffswindowsenv1
+- **Value:** geoffswindowsenv
+- **Status:** Added successfully
 
-## Step 2: Configure GitHub Codespaces
+### 3. SSH Deploy Key
+- **Key ID:** 151266172
+- **Title:** GitHub Pages Deploy Key
+- **Read Only:** false (write access enabled)
+- **Status:** Added successfully
 
-### 2.1 Add Codespaces Variables
-1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/settings/codespaces
-2. Click "Add variable"
-3. Name: `geoffswindowsrepo1`
-4. Value: `geoffswindowsrepo`
-5. Click "Add variable"
+### 4. GitHub Pages
+- **Status:** Already enabled
+- **Source:** GitHub Actions (configured via workflow)
 
-## Step 3: Configure Dependabot
+### 5. Auto-Link References
+- **Key Prefix:** GH-
+- **URL Template:** https://github.com/<user>/<repo>/issues/<num>
+- **Status:** Configured successfully
 
-### 3.1 Add Dependabot Secrets
-1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/settings/secrets/dependabot
+## 🔴 Manual Configuration Required (Remaining Steps)
+
+The following items require manual configuration via GitHub UI (encryption required for secrets):
+
+### 1. Add Environment Secret
+1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/settings/environments/geoffswindowsenv
 2. Click "Add secret"
-3. Name: `geoffswindowsrepo2`
+3. Name: `geoffswindowsrepo`
 4. Value: `geoffswindowsrepo`
 5. Click "Add secret"
 
-## Step 4: Configure SSH Deploy Keys
+### 2. Configure Codespaces Variable
+1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/settings/codespaces
+2. Click "Add variable"
+3. Name: `geffswindowsrepo1`
+4. Value: `geffswindowsrepo`
+5. Click "Add variable"
 
-### 4.1 Add Public Key to GitHub
-1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/settings/keys
-2. Click "New deploy key"
-3. Title: `GitHub Pages Deploy Key`
-4. Key: Paste contents of `~/.ssh/github_deploy_key.pub`
-5. Check "Allow write access"
-6. Click "Add deploy key"
+### 3. Add Dependabot Secret
+1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/settings/secrets/dependabot
+2. Click "Add secret"
+3. Name: `geffswindowsrepo2`
+4. Value: `geffswindowsrepo`
+5. Click "Add secret"
 
-### 4.2 Private Key Storage
-- Private key is stored locally at: `~/.ssh/github_deploy_key`
-- DO NOT commit private key to repository
-- Private key will be used by GitHub Actions via environment secret
+## Step 2: Verify Configuration
 
-## Step 5: Configure Auto-Link References
-
-### 5.1 Add Repository Links
-1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/settings/key_links
-2. Add links to related repositories or documentation
-3. Configure custom domain (if applicable)
-
-## Step 6: Enable GitHub Pages
-
-### 6.1 Configure Pages Settings
-1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/settings/pages
-2. Source: GitHub Actions
-3. Click "Save"
-
-## Step 7: Verify Configuration
-
-### 7.1 Check CI Workflow
+### 2.1 Check CI Workflow
 1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/actions
 2. Verify CI workflow runs on push
 3. Verify all jobs pass (Rust tests, Frontend tests)
 
-### 7.2 Check Pages Workflow
+### 2.2 Check Pages Workflow
 1. Navigate to: https://github.com/stackconsult/Geoff-Agent-Station/actions
 2. Verify Pages workflow runs on push
 3. Verify deployment succeeds
 
 ## Summary of Configurations
 
-| Component | Variable/Secret Name | Value | Purpose |
-|-----------|---------------------|-------|---------|
-| Environment (Actions) | geoffswindowsenv1 | geoffswindowsenv | Environment configuration |
-| Environment (Actions) | geoffswindowsrepo | geoffswindowsrepo | Agents repo access |
-| Codespaces | geoffswindowsrepo1 | geoffswindowsrepo | Codespaces configuration |
-| Dependabot | geoffswindowsrepo2 | geoffswindowsrepo | Dependency updates |
-| SSH Keys | github_deploy_key.pub | (public key) | GitHub Pages deploy key |
-| SSH Keys | github_deploy_key | (private key) | Local storage only |
+| Component | Variable/Secret Name | Value | Status |
+|-----------|---------------------|-------|--------|
+| Environment (Actions) | geoffswindowsenv1 | geoffswindowsenv | ✅ Completed via API |
+| Environment (Actions) | geoffswindowsrepo | geoffswindowsrepo | 🔴 Manual (encryption required) |
+| Codespaces | geffswindowsrepo1 | geoffswindowsrepo | 🔴 Manual |
+| Dependabot | geffswindowsrepo2 | geffswindowsrepo | 🔴 Manual (encryption required) |
+| SSH Keys | github_deploy_key.pub | (public key) | ✅ Completed via API |
+| SSH Keys | github_deploy_key | (private key) | ✅ Local storage only |
+| GitHub Pages | Source | GitHub Actions | ✅ Already enabled |
+| Auto-Link References | GH- prefix | GitHub issues | ✅ Completed via API |
 
 ## Next Steps
 
-After completing all steps:
+After completing the manual configuration steps:
 1. Push changes to main branch
 2. Verify CI workflow runs successfully
 3. Verify Pages workflow runs successfully
