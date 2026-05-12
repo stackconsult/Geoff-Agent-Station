@@ -41,7 +41,8 @@ export function AIModelSelector({ selectedModel, onModelChange }: AIModelSelecto
           {AVAILABLE_MODELS.map((model) => (
             <button
               key={model.id}
-              onClick={() => {
+              onClick={async () => {
+                await invoke('ai_switch_model', { modelId: model.id });
                 onModelChange(model.id);
                 setIsOpen(false);
               }}
