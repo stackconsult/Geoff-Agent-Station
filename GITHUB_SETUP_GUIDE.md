@@ -48,6 +48,8 @@ The following items have been automatically configured using the GitHub API and 
 
 **Note:** The Codespaces variable (geffswindowsrepo1) was configured via devcontainer.json remoteEnv property instead of GitHub UI, as GitHub Codespaces API only supports SECRETS (encrypted values), not VARIABLES (non-encrypted values). For non-sensitive values, the remoteEnv property in devcontainer.json is the recommended autonomous approach.
 
+**Note:** GitHub Pages source branch was updated from "main" to "master" to match the repository's primary branch.
+
 ## Step 2: Verify Configuration
 
 ### 2.1 Check CI Workflow
