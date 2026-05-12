@@ -5,6 +5,10 @@ on:
     branches: [ "master" ]
   workflow_dispatch:
 
+# Suppress email notifications by limiting permissions
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -42,6 +46,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     
+    # Override top-level permissions for deploy job
     permissions:
       contents: read
       pages: write

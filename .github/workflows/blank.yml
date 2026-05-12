@@ -7,6 +7,10 @@ on:
     branches: [ "master" ]
   workflow_dispatch:
 
+# Suppress email notifications by limiting permissions
+permissions:
+  contents: read
+
 jobs:
   rust:
     name: Rust Check & Test
