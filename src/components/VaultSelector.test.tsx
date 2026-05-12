@@ -5,7 +5,7 @@ import { VaultSelector } from './VaultSelector';
 describe('VaultSelector', () => {
   it('renders vault selection UI when no vault is selected', () => {
     render(<VaultSelector onVaultSelect={vi.fn()} />);
-    expect(screen.getByRole('heading', { name: /select your obsidian vault/i }))
+    expect(screen.getByRole('heading', { name: /open a vault/i }))
       .toBeInTheDocument();
   });
 });
