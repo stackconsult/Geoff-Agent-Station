@@ -3,6 +3,7 @@ import { cn } from '../../lib/utils'
 import { Button } from '../ui/Button'
 import { GitBranch, Check, AlertCircle, RefreshCw, FolderOpen, Settings, GitMerge, Zap, Archive } from 'lucide-react'
 import type { SyncStatus } from '../../types'
+import { HealthIndicator, type HealthStatus } from '../HealthIndicator'
 
 interface StatusBarProps {
   noteCount?: number
@@ -17,6 +18,8 @@ interface StatusBarProps {
   onOpenSettings?: () => void
   onToggleAutomation?: () => void
   onOpenBackups?: () => void
+  healthStatus?: HealthStatus | null
+  onHealthCheck?: () => void
   className?: string
 }
 
@@ -63,6 +66,8 @@ export function StatusBar({
   onOpenSettings,
   onToggleAutomation,
   onOpenBackups,
+  healthStatus,
+  onHealthCheck,
   className,
 }: StatusBarProps) {
   useStatusBarTicker()
@@ -134,6 +139,9 @@ export function StatusBar({
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onOpenBackups} title="Restore from backup">
             <Archive className="h-3 w-3" />
           </Button>
+        )}
+        {healthStatus && (
+          <HealthIndicator status={healthStatus} onClick={onHealthCheck} />
         )}
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onOpenSettings}>
           <Settings className="h-3 w-3" />
