@@ -24,5 +24,9 @@
 
   "postCreateCommand": "cd src-tauri && cargo build && cd .. && pnpm install",
 
+  "remoteEnv": {
+    "geffswindowsrepo1": "geoffswindowsrepo"
+  },
+
   "remoteUser": "vscode"
 }
