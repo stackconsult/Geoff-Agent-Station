@@ -1,4 +1,46 @@
 use serde::Serialize;
+use tokio::fs;
+use walkdir::WalkDir;
+
+/// Check vault accessibility and count markdown notes
+pub async fn check_vault(vault_path: &str) -> HealthCheckDetail {
+    let start = std::time::Instant::now();
+
+    match fs::metadata(vault_path).await {
+        Ok(metadata) if metadata.is_dir() => {
+            // Count markdown files in vault
+            let count = WalkDir::new(vault_path)
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| {
+                    e.path()
+                        .extension()
+                        .map(|ext| ext == "md" || ext == "markdown")
+                        .unwrap_or(false)
+                })
+                .count();
+
+            HealthCheckDetail {
+                name: "vault".to_string(),
+                status: "pass".to_string(),
+                message: format!("{} notes found", count),
+                latency_ms: start.elapsed().as_millis() as u64,
+            }
+        }
+        Ok(_) => HealthCheckDetail {
+            name: "vault".to_string(),
+            status: "fail".to_string(),
+            message: "Path exists but is not a directory".to_string(),
+            latency_ms: start.elapsed().as_millis() as u64,
+        },
+        Err(e) => HealthCheckDetail {
+            name: "vault".to_string(),
+            status: "fail".to_string(),
+            message: format!("Vault inaccessible: {}", e),
+            latency_ms: start.elapsed().as_millis() as u64,
+        },
+    }
+}
 
 /// Overall health status response from health_check command
 #[derive(Serialize)]
