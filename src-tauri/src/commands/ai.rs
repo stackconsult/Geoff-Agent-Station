@@ -1,11 +1,13 @@
 use crate::ai::{AIEngine, AIConfig, Message};
 use once_cell::sync::Lazy;
 use std::sync::Arc;
+use std::collections::HashMap;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 use chrono::Utc;
 
 static AI_ENGINE: Lazy<Arc<Mutex<Option<AIEngine>>>> = Lazy::new(|| Arc::new(Mutex::new(None)));
+static VECTOR_STORE: Lazy<Arc<Mutex<HashMap<String, String>>>> = Lazy::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 #[tauri::command]
 pub async fn ai_setup_obsidian_vault(vault_path: String, note_count: usize) -> Result<(), String> {
@@ -146,19 +148,44 @@ pub async fn ai_switch_model(model_id: String) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn ai_vector_add_document(doc_path: String) -> Result<String, String> {
-    let doc_id = format!("doc-{}", chrono::Utc::now().timestamp());
-    println!("Adding document: {} -> {}", doc_path, doc_id);
+    let doc_id = format!("doc-{}", Utc::now().timestamp());
+    
+    // Read document content
+    let content = std::fs::read_to_string(&doc_path)
+        .map_err(|e| format!("Failed to read document: {}", e))?;
+    
+    // Store in vector store
+    let mut store = VECTOR_STORE.lock().await;
+    store.insert(doc_id.clone(), content);
+    
+    println!("Added document: {} -> {} ({} bytes)", doc_path, doc_id, content.len());
     Ok(doc_id)
 }
 
 #[tauri::command]
 pub async fn ai_vector_search(query: String) -> Result<Vec<String>, String> {
-    println!("Searching for: {}", query);
-    Ok(vec!["result1".to_string(), "result2".to_string()])
+    let store = VECTOR_STORE.lock().await;
+    
+    // Simple text-based search (can be upgraded to semantic search later)
+    let mut results = Vec::new();
+    for (doc_id, content) in store.iter() {
+        if content.to_lowercase().contains(&query.to_lowercase()) {
+            results.push(format!("{}: {}", doc_id, content.lines().next().unwrap_or("")));
+        }
+    }
+    
+    println!("Search for '{}' found {} results", query, results.len());
+    Ok(results)
 }
 
 #[tauri::command]
 pub async fn ai_vector_delete(doc_id: String) -> Result<(), String> {
-    println!("Deleting document: {}", doc_id);
-    Ok(())
+    let mut store = VECTOR_STORE.lock().await;
+    
+    if store.remove(&doc_id).is_some() {
+        println!("Deleted document: {}", doc_id);
+        Ok(())
+    } else {
+        Err(format!("Document not found: {}", doc_id))
+    }
 }
