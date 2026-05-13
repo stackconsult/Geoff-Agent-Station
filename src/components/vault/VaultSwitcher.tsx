@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { open } from '@tauri-apps/plugin-dialog';
 import { useVaultStore } from '../../stores/vaultStore';
 
 interface VaultConfig {
@@ -22,9 +23,31 @@ export function VaultSwitcher() {
     }
   };
 
-  const handleAddVault = () => {
-    // Would open file picker to select vault
-    console.log('Add vault');
+  const handleAddVault = async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: 'Select Vault Directory'
+      });
+      
+      if (selected && typeof selected === 'string') {
+        const vaultName = selected.split(/[\\/]/).pop() || 'New Vault';
+        const newVault: VaultConfig = {
+          id: `vault-${Date.now()}`,
+          path: selected,
+          name: vaultName,
+          isActive: true
+        };
+        
+        setVaults(vaults.map(v => ({ ...v, isActive: false })));
+        setVaults([...vaults, newVault]);
+        
+        loadNotes(selected);
+      }
+    } catch (error) {
+      console.error('Failed to open vault selector:', error);
+    }
   };
 
   return (

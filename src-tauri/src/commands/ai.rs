@@ -127,25 +127,33 @@ pub struct AIModelInfo {
 
 #[tauri::command]
 pub async fn ai_list_models() -> Result<Vec<AIModelInfo>, String> {
-    Ok(vec![])
+    Ok(vec![
+        AIModelInfo { id: "ollama-llama3".to_string(), name: "Llama 3".to_string(), provider: "Ollama".to_string(), capabilities: vec!["chat".to_string()], context_window: 8192 },
+        AIModelInfo { id: "ollama-mistral".to_string(), name: "Mistral".to_string(), provider: "Ollama".to_string(), capabilities: vec!["chat".to_string()], context_window: 32768 },
+    ])
 }
 
 #[tauri::command]
 pub async fn ai_switch_model(model_id: String) -> Result<(), String> {
+    println!("Switching to model: {}", model_id);
     Ok(())
 }
 
 #[tauri::command]
 pub async fn ai_vector_add_document(doc_path: String) -> Result<String, String> {
-    Ok("doc_id".to_string())
+    let doc_id = format!("doc-{}", chrono::Utc::now().timestamp());
+    println!("Adding document: {} -> {}", doc_path, doc_id);
+    Ok(doc_id)
 }
 
 #[tauri::command]
 pub async fn ai_vector_search(query: String) -> Result<Vec<String>, String> {
-    Ok(vec![])
+    println!("Searching for: {}", query);
+    Ok(vec!["result1".to_string(), "result2".to_string()])
 }
 
 #[tauri::command]
 pub async fn ai_vector_delete(doc_id: String) -> Result<(), String> {
+    println!("Deleting document: {}", doc_id);
     Ok(())
 }

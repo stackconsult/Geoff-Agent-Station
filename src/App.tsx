@@ -16,6 +16,7 @@ import { RestoreBackupDialog } from './components/RestoreBackupDialog';
 import type { HealthStatus } from './components/HealthIndicator';
 import { AppLayout, Sidebar, NoteList, Editor, AiPanel, StatusBar } from './components/layout';
 import { AutomationDashboard } from './pages/AutomationDashboard';
+import { DashboardManager } from './components/dashboard/DashboardManager';
 import { Toaster, toast } from 'sonner';
 
 const VAULT_PATH_KEY = 'tolaria_vault_path';
@@ -40,6 +41,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showBackups, setShowBackups] = useState(false);
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
+  const [useMultiDashboard, setUseMultiDashboard] = useState(false);
 
   // Load vault path from localStorage on mount — if none saved, VaultSelector appears
   useEffect(() => {
@@ -47,6 +49,9 @@ export default function App() {
     if (savedPath) {
       setLocalVaultPath(savedPath);
       loadNotes(savedPath);
+    } else {
+      // Force VaultSelector to show if no vault path
+      console.log('[App] No vault path found in localStorage, showing VaultSelector');
     }
   }, []);
 
@@ -183,7 +188,10 @@ export default function App() {
       <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
         {isLoading && <LoadingSpinner />}
         {error && <ErrorDisplay error={error} onDismiss={handleDismissError} />}
-        {showAutomation ? (
+        <button onClick={() => setUseMultiDashboard(!useMultiDashboard)} className="fixed top-4 right-4 z-50 px-4 py-2 bg-[var(--color-accent)] text-white rounded text-sm">
+          {useMultiDashboard ? '← Legacy' : 'Multi-Dashboard →'}
+        </button>
+        {useMultiDashboard ? <DashboardManager /> : showAutomation ? (
           <ErrorBoundary
             fallback={
               <div className="h-screen flex items justify-center bg-[var(--color-bg-primary)]">

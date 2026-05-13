@@ -19,12 +19,34 @@ export function VisualWorkflowBuilder({ onWorkflowSave }: VisualWorkflowBuilderP
   ]);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
-  const handleNodeDrag = useCallback((nodeId: string, dx: number, dy: number) => {
-    setNodes(nodes => nodes.map(node => 
-      node.id === nodeId 
-        ? { ...node, position: { x: node.position.x + dx, y: node.position.y + dy } }
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  const handleNodeDragStart = (nodeId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    setSelectedNode(nodeId);
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - node.position.x,
+      y: e.clientY - node.position.y
+    });
+  };
+
+  const handleNodeDragMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging || !selectedNode) return;
+    const newX = e.clientX - dragOffset.x;
+    const newY = e.clientY - dragOffset.y;
+    setNodes(nodes => nodes.map(node =>
+      node.id === selectedNode
+        ? { ...node, position: { x: newX, y: newY } }
         : node
     ));
+  }, [isDragging, selectedNode, dragOffset]);
+
+  const handleNodeDragEnd = useCallback(() => {
+    setIsDragging(false);
   }, []);
 
   const addNode = (type: WorkflowNode['type']) => {
@@ -71,7 +93,8 @@ export function VisualWorkflowBuilder({ onWorkflowSave }: VisualWorkflowBuilderP
             </button>
           </div>
         </div>
-        <div className="flex-1 relative bg-[var(--color-bg-primary)] overflow-hidden">
+        <div className="flex-1 relative bg-[var(--color-bg-primary)] overflow-hidden"
+             onMouseMove={handleNodeDragMove} onMouseUp={handleNodeDragEnd}>
           <svg className="w-full h-full">
             {nodes.map(node => (
               <g key={node.id}>
@@ -89,7 +112,7 @@ export function VisualWorkflowBuilder({ onWorkflowSave }: VisualWorkflowBuilderP
                   fill={selectedNode === node.id ? 'var(--color-accent)' : 'var(--color-bg-secondary)'}
                   stroke={selectedNode === node.id ? 'var(--color-accent)' : 'var(--color-border)'}
                   strokeWidth={2}
-                  onClick={() => setSelectedNode(node.id)}
+                  onMouseDown={(e) => handleNodeDragStart(node.id, e)}
                   className="cursor-move"
                 />
                 <text

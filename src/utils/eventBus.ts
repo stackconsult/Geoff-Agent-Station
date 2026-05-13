@@ -21,7 +21,13 @@ class EventBusImpl implements EventBus {
   emit(event: string, data: unknown): void {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
-      callbacks.forEach(callback => callback(data));
+      callbacks.forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error(`EventBus error in ${event}:`, error);
+        }
+      });
     }
   }
 
