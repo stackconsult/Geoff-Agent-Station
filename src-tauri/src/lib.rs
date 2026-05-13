@@ -94,6 +94,8 @@ pub fn run() {
             commands::ai::ai_vector_add_document,
             commands::ai::ai_vector_search,
             commands::ai::ai_vector_delete,
+            // Agent commands
+            commands::ai::agent_execute,
             // Clipboard commands
             commands::clipboard::clipboard_get_text,
             commands::clipboard::clipboard_set_text,

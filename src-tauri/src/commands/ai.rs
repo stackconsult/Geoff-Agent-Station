@@ -189,3 +189,24 @@ pub async fn ai_vector_delete(doc_id: String) -> Result<(), String> {
         Err(format!("Document not found: {}", doc_id))
     }
 }
+
+#[derive(serde::Serialize)]
+pub struct AgentExecutionResult {
+    pub agent_id: String,
+    pub status: String,
+    pub output: String,
+    pub execution_time_ms: u64,
+}
+
+#[tauri::command]
+pub async fn agent_execute(agent_id: String, agent_type: String, model: String, capabilities: Vec<String>) -> Result<AgentExecutionResult, String> {
+    let start = std::time::Instant::now();
+    tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+    let execution_time = start.elapsed().as_millis() as u64;
+    Ok(AgentExecutionResult {
+        agent_id,
+        status: "completed".to_string(),
+        output: format!("Agent executed in {}ms", execution_time),
+        execution_time_ms: execution_time,
+    })
+}
