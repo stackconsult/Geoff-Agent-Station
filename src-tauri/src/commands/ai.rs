@@ -154,11 +154,13 @@ pub async fn ai_vector_add_document(doc_path: String) -> Result<String, String> 
     let content = std::fs::read_to_string(&doc_path)
         .map_err(|e| format!("Failed to read document: {}", e))?;
     
+    let content_len = content.len();
+    
     // Store in vector store
     let mut store = VECTOR_STORE.lock().await;
     store.insert(doc_id.clone(), content);
     
-    println!("Added document: {} -> {} ({} bytes)", doc_path, doc_id, content.len());
+    println!("Added document: {} -> {} ({} bytes)", doc_path, doc_id, content_len);
     Ok(doc_id)
 }
 
@@ -199,7 +201,7 @@ pub struct AgentExecutionResult {
 }
 
 #[tauri::command]
-pub async fn agent_execute(agent_id: String, agent_type: String, model: String, capabilities: Vec<String>) -> Result<AgentExecutionResult, String> {
+pub async fn agent_execute(agent_id: String, _agent_type: String, _model: String, _capabilities: Vec<String>) -> Result<AgentExecutionResult, String> {
     let start = std::time::Instant::now();
     tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
     let execution_time = start.elapsed().as_millis() as u64;
