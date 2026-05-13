@@ -1,19 +1,32 @@
 import { useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useAgentStore } from '../../stores/agentStore';
 
 export function AgentExecutionEngine() {
   const { agents, activeAgentId, updateAgentStatus } = useAgentStore();
   const [isExecuting, setIsExecuting] = useState(false);
+  const [output, setOutput] = useState('');
   const activeAgent = agents.find(a => a.id === activeAgentId);
 
   const executeAgent = async () => {
     if (!activeAgent || isExecuting) return;
     setIsExecuting(true);
     updateAgentStatus(activeAgent.id, 'running');
-    setTimeout(() => {
+    try {
+      const result = await invoke('agent_execute', {
+        agentId: activeAgent.id,
+        agentType: activeAgent.type,
+        model: activeAgent.model,
+        capabilities: activeAgent.capabilities
+      });
+      setOutput(result.output);
       updateAgentStatus(activeAgent.id, 'completed');
+    } catch (error) {
+      setOutput(`Error: ${String(error)}`);
+      updateAgentStatus(activeAgent.id, 'error');
+    } finally {
       setIsExecuting(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -28,10 +41,18 @@ export function AgentExecutionEngine() {
       </div>
       <div className="flex-1 p-4">
         {activeAgent ? (
-          <div className="p-4 bg-[var(--color-bg-secondary)] rounded border border-[var(--color-border)]">
-            <div className="font-medium">{activeAgent.name}</div>
-            <div className="text-sm text-[var(--color-text-secondary)] mt-1">{activeAgent.description}</div>
-            <div className="text-xs text-[var(--color-text-secondary)] mt-2">Status: {activeAgent.status}</div>
+          <div className="space-y-4">
+            <div className="p-4 bg-[var(--color-bg-secondary)] rounded border border-[var(--color-border)]">
+              <div className="font-medium">{activeAgent.name}</div>
+              <div className="text-sm text-[var(--color-text-secondary)] mt-1">{activeAgent.description}</div>
+              <div className="text-xs text-[var(--color-text-secondary)] mt-2">Status: {activeAgent.status}</div>
+            </div>
+            {output && (
+              <div className="p-4 bg-[var(--color-bg-secondary)] rounded border border-[var(--color-border)]">
+                <div className="text-sm font-medium mb-2">Execution Output:</div>
+                <div className="text-xs text-[var(--color-text-secondary)]">{output}</div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-sm text-[var(--color-text-secondary)] text-center py-8">Select an agent</div>
