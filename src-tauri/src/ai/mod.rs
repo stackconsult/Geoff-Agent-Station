@@ -194,6 +194,26 @@ impl AIEngine {
         *config = new_config;
     }
 
+    pub async fn switch_model(&self, model_id: String) -> Result<(), String> {
+        let mut config = self.config.lock().await;
+        
+        match &mut config.provider {
+            LLMProvider::Ollama { model, .. } => {
+                *model = model_id;
+                Ok(())
+            }
+            LLMProvider::OpenAI { model, .. } => {
+                *model = model_id;
+                Ok(())
+            }
+            LLMProvider::Anthropic { model, .. } => {
+                *model = model_id;
+                Ok(())
+            }
+            _ => Err("Model switching not supported for this provider".to_string())
+        }
+    }
+
     pub async fn ingest_documentation(&self, docs_path: String) -> Result<usize, String> {
         let path = std::path::Path::new(&docs_path);
         let mut context = self.context_window.lock().await;

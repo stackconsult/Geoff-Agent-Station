@@ -3,6 +3,7 @@ use once_cell::sync::Lazy;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
+use chrono::Utc;
 
 static AI_ENGINE: Lazy<Arc<Mutex<Option<AIEngine>>>> = Lazy::new(|| Arc::new(Mutex::new(None)));
 
@@ -135,8 +136,12 @@ pub async fn ai_list_models() -> Result<Vec<AIModelInfo>, String> {
 
 #[tauri::command]
 pub async fn ai_switch_model(model_id: String) -> Result<(), String> {
-    println!("Switching to model: {}", model_id);
-    Ok(())
+    let global_engine: tokio::sync::MutexGuard<'_, Option<AIEngine>> = AI_ENGINE.lock().await;
+    if let Some(engine) = global_engine.as_ref() {
+        engine.switch_model(model_id).await
+    } else {
+        Err("AI engine not initialized. Call ai_initialize first.".to_string())
+    }
 }
 
 #[tauri::command]
