@@ -57,6 +57,7 @@
     "@eslint/compat": "^2.1.0",
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.3.0",
     "@tanstack/react-query-devtools": "^5.100.10",
     "@tauri-apps/cli": "^2",
     "@testing-library/jest-dom": "^6.9.1",
