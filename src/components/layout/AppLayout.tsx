@@ -12,7 +12,7 @@ interface AppLayoutProps {
 
 /**
  * Four-Panel Layout matching Tolaria architecture
- * 
+ *
  * ┌────────┬─────────────┬─────────────────────────┬────────────┐
  * │Sidebar │ Note List   │ Editor                  │ Right Panel│
  * │(250px) │ (300px)     │ (flex-1)                │ (280px)    │
@@ -29,7 +29,12 @@ export function AppLayout({
   className,
 }: AppLayoutProps) {
   return (
-    <div className={cn("flex flex-col h-screen w-screen overflow-hidden bg-[var(--color-bg-primary)]", className)}>
+    <div
+      className={cn(
+        'flex flex-col h-screen w-screen overflow-hidden bg-[var(--color-bg-primary)]',
+        className
+      )}
+    >
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - 250px fixed */}
@@ -43,9 +48,7 @@ export function AppLayout({
         </div>
 
         {/* Editor - flex-1 takes remaining */}
-        <main className="flex-1 min-w-[400px] overflow-hidden">
-          {editor}
-        </main>
+        <main className="flex-1 min-w-[400px] overflow-hidden">{editor}</main>
 
         {/* AI Panel - 280px fixed, collapsible */}
         <aside className="w-[var(--ai-panel-width)] min-w-[200px] max-w-[400px] flex-shrink-0 border-l border-[var(--color-border-primary)] overflow-hidden">

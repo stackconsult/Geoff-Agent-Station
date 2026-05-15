@@ -13,20 +13,27 @@ interface Workflow {
 
 export function WorkflowBuilder() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
-  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(
+    null
+  );
   const [isCreating, setIsCreating] = useState(false);
 
   const loadWorkflows = useCallback(async () => {
     try {
       const result = await invoke<Array<[string, Workflow]>>('list_workflows');
-      const workflowList = result.map(([id, workflow]) => ({ ...workflow, id }));
+      const workflowList = result.map(([id, workflow]) => ({
+        ...workflow,
+        id,
+      }));
       setWorkflows(workflowList);
     } catch (error) {
       console.error('Failed to load workflows:', error);
     }
   }, []);
 
-  useEffect(() => { loadWorkflows(); }, [loadWorkflows]);
+  useEffect(() => {
+    loadWorkflows();
+  }, [loadWorkflows]);
 
   const createWorkflow = async () => {
     const newWorkflow = {
@@ -39,7 +46,9 @@ export function WorkflowBuilder() {
     };
 
     try {
-      const id = await invoke<string>('create_workflow', { workflow: newWorkflow });
+      const id = await invoke<string>('create_workflow', {
+        workflow: newWorkflow,
+      });
       await loadWorkflows();
       setIsCreating(false);
     } catch (error) {
@@ -79,7 +88,7 @@ export function WorkflowBuilder() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {workflows.map((workflow) => (
+          {workflows.map(workflow => (
             <div
               key={workflow.id}
               onClick={() => setSelectedWorkflow(workflow)}
@@ -136,13 +145,20 @@ export function WorkflowBuilder() {
             <div className="border border-[var(--color-border)] rounded-lg p-8 bg-[var(--color-bg-secondary)] min-h-[400px]">
               <div className="text-center text-[var(--color-text-secondary)]">
                 <p className="text-lg mb-2">Visual Workflow Builder</p>
-                <p className="text-sm">Drag and drop triggers, conditions, and actions to build your workflow</p>
+                <p className="text-sm">
+                  Drag and drop triggers, conditions, and actions to build your
+                  workflow
+                </p>
                 <div className="mt-8 space-y-4">
                   <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-md">
-                    <p className="font-medium text-blue-400">Triggers: {selectedWorkflow.triggers.length}</p>
+                    <p className="font-medium text-blue-400">
+                      Triggers: {selectedWorkflow.triggers.length}
+                    </p>
                   </div>
                   <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-md">
-                    <p className="font-medium text-purple-400">Actions: {selectedWorkflow.actions.length}</p>
+                    <p className="font-medium text-purple-400">
+                      Actions: {selectedWorkflow.actions.length}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -152,7 +168,9 @@ export function WorkflowBuilder() {
           <div className="h-full flex items-center justify-center text-[var(--color-text-secondary)]">
             <div className="text-center">
               <p className="text-lg mb-2">No workflow selected</p>
-              <p className="text-sm">Select a workflow from the list or create a new one</p>
+              <p className="text-sm">
+                Select a workflow from the list or create a new one
+              </p>
             </div>
           </div>
         )}

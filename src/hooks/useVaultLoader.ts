@@ -15,4 +15,3 @@ export function useVaultLoader(vaultPath: string) {
     syncMcpBridge();
   }, [vaultPath]);
 }
-

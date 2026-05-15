@@ -34,7 +34,7 @@ export function AutomationDashboard() {
 
       {/* Tab Navigation */}
       <nav className="h-12 border-b border-[var(--color-border)] flex items-center px-4 gap-2 bg-[var(--color-bg-secondary)]">
-        {tabs.map((tab) => (
+        {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}

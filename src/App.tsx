@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { Routes, Route } from 'react-router-dom';
+import { systemManager } from './integration';
 import { useAutoGit } from './hooks/useAutoGit';
 import { useVaultLoader } from './hooks/useVaultLoader';
 import { useVaultStore } from './stores/vaultStore';
@@ -17,6 +19,7 @@ import type { HealthStatus } from './components/HealthIndicator';
 import { AppLayout, Sidebar, NoteList, Editor, AiPanel, StatusBar } from './components/layout';
 import { AutomationDashboard } from './pages/AutomationDashboard';
 import { DashboardManager } from './components/dashboard/DashboardManager';
+import { MainDashboard } from './components/dashboard/MainDashboard';
 import { Toaster, toast } from 'sonner';
 
 const VAULT_PATH_KEY = 'tolaria_vault_path';
@@ -43,6 +46,12 @@ export default function App() {
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
   const [useMultiDashboard, setUseMultiDashboard] = useState(false);
 
+  // Initialize system manager
+  useEffect(() => {
+    systemManager.initialize().catch(console.error);
+    return () => { systemManager.shutdown().catch(console.error); };
+  }, []);
+
   // Load vault path from localStorage on mount — if none saved, VaultSelector appears
   useEffect(() => {
     const savedPath = localStorage.getItem(VAULT_PATH_KEY);
@@ -51,7 +60,7 @@ export default function App() {
       loadNotes(savedPath);
     } else {
       // Force VaultSelector to show if no vault path
-      console.log('[App] No vault path found in localStorage, showing VaultSelector');
+      toast.info('Select a vault to get started');
     }
   }, []);
 
@@ -171,31 +180,24 @@ export default function App() {
     isLoading: isLoadingNote,
   } : null;
 
-  if (!localVaultPath) {
-    return (
-      <ClassErrorBoundary>
-        <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
-          {isLoading && <LoadingSpinner />}
-          {error && <ErrorDisplay error={error} onDismiss={handleDismissError} />}
-          <VaultSelector onVaultSelect={handleVaultSelect} isLoading={isLoading} />
-        </div>
-      </ClassErrorBoundary>
-    );
-  }
-
   return (
     <ClassErrorBoundary>
-      <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
-        {isLoading && <LoadingSpinner />}
-        {error && <ErrorDisplay error={error} onDismiss={handleDismissError} />}
-        <button onClick={() => setUseMultiDashboard(!useMultiDashboard)} className="fixed top-4 right-4 z-50 px-4 py-2 bg-[var(--color-accent)] text-white rounded text-sm">
-          {useMultiDashboard ? '← Legacy' : 'Multi-Dashboard →'}
-        </button>
-        {useMultiDashboard ? <DashboardManager /> : showAutomation ? (
-          <ErrorBoundary
-            fallback={
-              <div className="h-screen flex items justify-center bg-[var(--color-bg-primary)]">
-                <div className="text-center p-8 max-w-md">
+      <Routes>
+        <Route path="/dashboard" element={<MainDashboard />} />
+        <Route path="/*" element={
+          <div className="h-screen w-screen bg-[var(--color-bg-primary)]">
+            {!localVaultPath ? <VaultSelector onVaultSelect={handleVaultSelect} isLoading={isLoading} /> : (
+              <>
+                {isLoading && <LoadingSpinner />}
+                {error && <ErrorDisplay error={error} onDismiss={handleDismissError} />}
+                <button onClick={() => setUseMultiDashboard(!useMultiDashboard)} className="fixed top-4 right-4 z-50 px-4 py-2 bg-[var(--color-accent)] text-white rounded text-sm">
+                  {useMultiDashboard ? '← Legacy' : 'Multi-Dashboard →'}
+                </button>
+                {useMultiDashboard ? <DashboardManager /> : showAutomation ? (
+                  <ErrorBoundary
+                    fallback={
+                      <div className="h-screen flex items justify-center bg-[var(--color-bg-primary)]">
+                      <div className="text-center p-8 max-w-md">
                   <p className="text-red-400 text-lg font-semibold mb-2">Automation Dashboard Error</p>
                   <p className="text-[var(--color-text-secondary)] text-sm mb-4">
                     A tab component crashed. Check the console for details.
@@ -281,7 +283,11 @@ created: ${new Date().toISOString()}
           }
         />
         )}
-      </div>
+              </>
+            )}
+          </div>
+        } />
+      </Routes>
       <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <RestoreBackupDialog
         isOpen={showBackups}

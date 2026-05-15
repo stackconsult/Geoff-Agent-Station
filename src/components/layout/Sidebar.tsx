@@ -1,34 +1,54 @@
-import { useMemo } from 'react'
-import { cn } from '../../lib/utils'
-import { Button } from '../ui/Button'
-import { Files, GitBranch, Inbox, Activity, Star, Archive, ChevronRight } from 'lucide-react'
-import type { VaultEntry, SidebarSelection, SidebarFilter, FolderNode } from '../../types'
+import { useMemo } from 'react';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/Button';
+import {
+  Files,
+  GitBranch,
+  Inbox,
+  Activity,
+  Star,
+  Archive,
+  ChevronRight,
+} from 'lucide-react';
+import type {
+  VaultEntry,
+  SidebarSelection,
+  SidebarFilter,
+  FolderNode,
+} from '../../types';
 
 interface SidebarProps {
-  vaultName?: string
-  entries: VaultEntry[]
-  selection: SidebarSelection
-  onSelect: (selection: SidebarSelection) => void
-  folders?: FolderNode[]
-  inboxCount?: number
-  className?: string
+  vaultName?: string;
+  entries: VaultEntry[];
+  selection: SidebarSelection;
+  onSelect: (selection: SidebarSelection) => void;
+  folders?: FolderNode[];
+  inboxCount?: number;
+  className?: string;
 }
 
-const TOP_FILTERS: { filter: SidebarFilter; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { filter: 'all',       label: 'All Notes', icon: Files },
-  { filter: 'inbox',     label: 'Inbox',     icon: Inbox },
-  { filter: 'changes',   label: 'Changes',   icon: GitBranch },
-  { filter: 'pulse',     label: 'Pulse',     icon: Activity },
+const TOP_FILTERS: {
+  filter: SidebarFilter;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { filter: 'all', label: 'All Notes', icon: Files },
+  { filter: 'inbox', label: 'Inbox', icon: Inbox },
+  { filter: 'changes', label: 'Changes', icon: GitBranch },
+  { filter: 'pulse', label: 'Pulse', icon: Activity },
   { filter: 'favorites', label: 'Favorites', icon: Star },
-  { filter: 'archived',  label: 'Archived',  icon: Archive },
-]
+  { filter: 'archived', label: 'Archived', icon: Archive },
+];
 
-function isFilterActive(selection: SidebarSelection, filter: SidebarFilter): boolean {
-  return selection.kind === 'filter' && selection.filter === filter
+function isFilterActive(
+  selection: SidebarSelection,
+  filter: SidebarFilter
+): boolean {
+  return selection.kind === 'filter' && selection.filter === filter;
 }
 
 function isSectionActive(selection: SidebarSelection, type: string): boolean {
-  return selection.kind === 'sectionGroup' && selection.type === type
+  return selection.kind === 'sectionGroup' && selection.type === type;
 }
 
 function FolderItem({
@@ -37,12 +57,12 @@ function FolderItem({
   onSelect,
   depth = 0,
 }: {
-  node: FolderNode
-  selection: SidebarSelection
-  onSelect: (s: SidebarSelection) => void
-  depth?: number
+  node: FolderNode;
+  selection: SidebarSelection;
+  onSelect: (s: SidebarSelection) => void;
+  depth?: number;
 }) {
-  const isActive = selection.kind === 'folder' && selection.path === node.path
+  const isActive = selection.kind === 'folder' && selection.path === node.path;
   return (
     <li>
       <button
@@ -50,7 +70,8 @@ function FolderItem({
         className={cn(
           'w-full flex items-center gap-1.5 px-2 py-1 rounded text-sm text-left',
           'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)]',
-          isActive && 'bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] font-medium',
+          isActive &&
+            'bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] font-medium'
         )}
         style={{ paddingLeft: `${8 + depth * 12}px` }}
       >
@@ -59,13 +80,19 @@ function FolderItem({
       </button>
       {node.children.length > 0 && (
         <ul>
-          {node.children.map((child) => (
-            <FolderItem key={child.path} node={child} selection={selection} onSelect={onSelect} depth={depth + 1} />
+          {node.children.map(child => (
+            <FolderItem
+              key={child.path}
+              node={child}
+              selection={selection}
+              onSelect={onSelect}
+              depth={depth + 1}
+            />
           ))}
         </ul>
       )}
     </li>
-  )
+  );
 }
 
 /**
@@ -74,23 +101,38 @@ function FolderItem({
  * Type sections map to { kind: 'sectionGroup', type }.
  * Folders map to { kind: 'folder', path }.
  */
-export function Sidebar({ vaultName = 'Vault', entries, selection, onSelect, folders, inboxCount, className }: SidebarProps) {
+export function Sidebar({
+  vaultName = 'Vault',
+  entries,
+  selection,
+  onSelect,
+  folders,
+  inboxCount,
+  className,
+}: SidebarProps) {
   // Derive distinct types from real VaultEntry.isA (not hardcoded)
   const typeGroups = useMemo(() => {
-    const seen = new Set<string>()
+    const seen = new Set<string>();
     for (const e of entries) {
-      if (e.isA && !e.archived) seen.add(e.isA)
+      if (e.isA && !e.archived) seen.add(e.isA);
     }
-    return Array.from(seen).sort()
-  }, [entries])
+    return Array.from(seen).sort();
+  }, [entries]);
 
-  const inboxBadge = inboxCount && inboxCount > 0 ? inboxCount : null
+  const inboxBadge = inboxCount && inboxCount > 0 ? inboxCount : null;
 
   return (
-    <div className={cn('flex flex-col h-full bg-[var(--color-bg-secondary)]', className)}>
+    <div
+      className={cn(
+        'flex flex-col h-full bg-[var(--color-bg-secondary)]',
+        className
+      )}
+    >
       {/* Vault title bar */}
       <div className="px-4 py-3 border-b border-[var(--color-border-primary)] flex-shrink-0">
-        <h2 className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{vaultName}</h2>
+        <h2 className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
+          {vaultName}
+        </h2>
       </div>
 
       <nav className="flex-1 overflow-y-auto scrollbar-thin py-2">
@@ -99,7 +141,9 @@ export function Sidebar({ vaultName = 'Vault', entries, selection, onSelect, fol
           {TOP_FILTERS.map(({ filter, label, icon: Icon }) => (
             <li key={filter}>
               <Button
-                variant={isFilterActive(selection, filter) ? 'secondary' : 'ghost'}
+                variant={
+                  isFilterActive(selection, filter) ? 'secondary' : 'ghost'
+                }
                 size="sm"
                 className="w-full justify-start gap-2 h-8"
                 onClick={() => onSelect({ kind: 'filter', filter })}
@@ -123,10 +167,12 @@ export function Sidebar({ vaultName = 'Vault', entries, selection, onSelect, fol
               Types
             </div>
             <ul className="space-y-0.5">
-              {typeGroups.map((type) => (
+              {typeGroups.map(type => (
                 <li key={type}>
                   <Button
-                    variant={isSectionActive(selection, type) ? 'secondary' : 'ghost'}
+                    variant={
+                      isSectionActive(selection, type) ? 'secondary' : 'ghost'
+                    }
                     size="sm"
                     className="w-full justify-between h-8"
                     onClick={() => onSelect({ kind: 'sectionGroup', type })}
@@ -147,13 +193,18 @@ export function Sidebar({ vaultName = 'Vault', entries, selection, onSelect, fol
               Folders
             </div>
             <ul className="space-y-0.5">
-              {folders.map((node) => (
-                <FolderItem key={node.path} node={node} selection={selection} onSelect={onSelect} />
+              {folders.map(node => (
+                <FolderItem
+                  key={node.path}
+                  node={node}
+                  selection={selection}
+                  onSelect={onSelect}
+                />
               ))}
             </ul>
           </div>
         )}
       </nav>
     </div>
-  )
+  );
 }

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useAgentStore, AgentStatus } from '../../stores/agentStore';
 
 export function AgentRegistry() {
-  const { agents, registerAgent, removeAgent, setActiveAgent, activeAgentId } = useAgentStore();
+  const { agents, registerAgent, removeAgent, setActiveAgent, activeAgentId } =
+    useAgentStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   const handleCreateAgent = () => {
@@ -12,7 +13,7 @@ export function AgentRegistry() {
       type: 'task',
       status: 'idle',
       model: 'ollama-llama3',
-      capabilities: ['chat', 'analysis']
+      capabilities: ['chat', 'analysis'],
     });
     setShowCreateForm(false);
   };
@@ -20,7 +21,9 @@ export function AgentRegistry() {
   return (
     <div className="h-full flex flex-col bg-[var(--color-bg-primary)]">
       <div className="h-14 border-b border-[var(--color-border)] flex items-center justify-between px-4 bg-[var(--color-bg-secondary)]">
-        <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Agent Registry</h2>
+        <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+          Agent Registry
+        </h2>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
           className="px-3 py-1.5 text-sm bg-[var(--color-accent)] text-white rounded hover:opacity-90"
@@ -56,7 +59,7 @@ export function AgentRegistry() {
           </div>
         ) : (
           <div className="space-y-2">
-            {agents.map((agent) => (
+            {agents.map(agent => (
               <div
                 key={agent.id}
                 onClick={() => setActiveAgent(agent.id)}
@@ -69,18 +72,24 @@ export function AgentRegistry() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">{agent.name}</div>
-                    <div className="text-xs opacity-70 mt-1">{agent.description}</div>
+                    <div className="text-xs opacity-70 mt-1">
+                      {agent.description}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      agent.status === 'running' ? 'bg-green-500' :
-                      agent.status === 'error' ? 'bg-red-500' :
-                      'bg-gray-500'
-                    }`}>
+                    <span
+                      className={`text-xs px-2 py-1 rounded ${
+                        agent.status === 'running'
+                          ? 'bg-green-500'
+                          : agent.status === 'error'
+                            ? 'bg-red-500'
+                            : 'bg-gray-500'
+                      }`}
+                    >
                       {agent.status}
                     </span>
                     <button
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                         removeAgent(agent.id);
                       }}

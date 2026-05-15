@@ -33,7 +33,7 @@ interface EditorProps {
 
 /**
  * Editor Component - FUNCTIONAL VERSION
- * 
+ *
  * Actually loads, displays, and saves note content.
  * Uses textarea as minimum viable editor until BlockNote integration.
  */
@@ -45,12 +45,15 @@ export function Editor({
   onSave,
   className,
 }: EditorProps) {
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-      e.preventDefault();
-      onSave?.();
-    }
-  }, [onSave]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        onSave?.();
+      }
+    },
+    [onSave]
+  );
 
   const handleEditorError = useCallback((err: EditorError) => {
     console.error('[Editor] Editor error:', err);
@@ -58,7 +61,12 @@ export function Editor({
 
   if (!note) {
     return (
-      <div className={cn("flex flex-col h-full items-center justify-center bg-[var(--color-bg-primary)]", className)}>
+      <div
+        className={cn(
+          'flex flex-col h-full items-center justify-center bg-[var(--color-bg-primary)]',
+          className
+        )}
+      >
         <div className="text-center">
           <FileText className="h-12 w-12 mx-auto text-[var(--color-text-muted)] mb-4" />
           <h3 className="text-lg font-medium text-[var(--color-text-secondary)]">
@@ -73,7 +81,12 @@ export function Editor({
   }
 
   return (
-    <div className={cn("flex flex-col h-full bg-[var(--color-bg-primary)]", className)}>
+    <div
+      className={cn(
+        'flex flex-col h-full bg-[var(--color-bg-primary)]',
+        className
+      )}
+    >
       {/* Breadcrumb & Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--color-border-primary)]">
         {/* Breadcrumb */}
@@ -85,10 +98,10 @@ export function Editor({
               )}
               <span
                 className={cn(
-                  "px-1.5 py-0.5 rounded truncate",
+                  'px-1.5 py-0.5 rounded truncate',
                   note.path && index === note.path.length - 1
-                    ? "text-[var(--color-text-primary)] font-medium"
-                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] cursor-pointer"
+                    ? 'text-[var(--color-text-primary)] font-medium'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] cursor-pointer'
                 )}
               >
                 {segment}
@@ -115,8 +128,8 @@ export function Editor({
             <Eye className="h-4 w-4 mr-1" />
             Raw
           </Button>
-          <Button 
-            variant="default" 
+          <Button
+            variant="default"
             size="sm"
             onClick={onSave}
             disabled={note.isLoading}
@@ -149,16 +162,20 @@ export function Editor({
           {note.isLoading ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-8 w-8 text-[var(--color-accent-primary)] animate-spin" />
-              <span className="ml-2 text-[var(--color-text-secondary)]">Loading note...</span>
+              <span className="ml-2 text-[var(--color-text-secondary)]">
+                Loading note...
+              </span>
             </div>
           ) : mode === 'rich' ? (
             <ErrorBoundary
-              fallback={<ErrorFallback message="Rich editor crashed. Switch to Raw mode." />}
+              fallback={
+                <ErrorFallback message="Rich editor crashed. Switch to Raw mode." />
+              }
               onReset={() => window.location.reload()}
             >
               <RichEditorView
                 content={note.content}
-                onChange={(md) => onContentChange?.(md)}
+                onChange={md => onContentChange?.(md)}
                 onError={handleEditorError}
               />
             </ErrorBoundary>

@@ -34,9 +34,24 @@ export function HealthIndicator({ status, onClick }: HealthIndicatorProps) {
   }
 
   const config = {
-    healthy: { icon: Check, color: 'text-green-500', bg: 'bg-green-500/10', label: 'Healthy' },
-    degraded: { icon: Activity, color: 'text-yellow-500', bg: 'bg-yellow-500/10', label: 'Degraded' },
-    unhealthy: { icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Unhealthy' },
+    healthy: {
+      icon: Check,
+      color: 'text-green-500',
+      bg: 'bg-green-500/10',
+      label: 'Healthy',
+    },
+    degraded: {
+      icon: Activity,
+      color: 'text-yellow-500',
+      bg: 'bg-yellow-500/10',
+      label: 'Degraded',
+    },
+    unhealthy: {
+      icon: AlertCircle,
+      color: 'text-red-500',
+      bg: 'bg-red-500/10',
+      label: 'Unhealthy',
+    },
   };
 
   const { icon: Icon, color, bg, label } = config[status.overall];

@@ -22,7 +22,8 @@ interface ProductivityStats {
 }
 
 export function ProductivityDashboard() {
-  const [pomodoroSession, setPomodoroSession] = useState<PomodoroSession | null>(null);
+  const [pomodoroSession, setPomodoroSession] =
+    useState<PomodoroSession | null>(null);
   const [stats, setStats] = useState<ProductivityStats | null>(null);
   const [isTracking, setIsTracking] = useState(false);
 
@@ -33,7 +34,9 @@ export function ProductivityDashboard() {
 
   const loadPomodoroStatus = async () => {
     try {
-      const session = await invoke<PomodoroSession | null>('productivity_get_pomodoro_status');
+      const session = await invoke<PomodoroSession | null>(
+        'productivity_get_pomodoro_status'
+      );
       setPomodoroSession(session);
     } catch (error) {
       console.error('Failed to load pomodoro status:', error);
@@ -42,8 +45,12 @@ export function ProductivityDashboard() {
 
   const loadStats = async () => {
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+
     try {
       const result = await invoke<ProductivityStats>('productivity_get_stats', {
         start: startOfDay.toISOString(),
@@ -119,7 +126,7 @@ export function ProductivityDashboard() {
           <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">
             🍅 Pomodoro Timer
           </h3>
-          
+
           {pomodoroSession ? (
             <div className="space-y-4">
               <div className="text-center">
@@ -127,10 +134,11 @@ export function ProductivityDashboard() {
                   {pomodoroSession.is_break ? 'Break Time' : 'Focus Time'}
                 </div>
                 <div className="text-sm text-[var(--color-text-secondary)]">
-                  Session {pomodoroSession.current_session} of {pomodoroSession.sessions_until_long_break}
+                  Session {pomodoroSession.current_session} of{' '}
+                  {pomodoroSession.sessions_until_long_break}
                 </div>
               </div>
-              
+
               <div className="flex justify-center gap-2">
                 <button
                   onClick={stopPomodoro}
@@ -160,15 +168,19 @@ export function ProductivityDashboard() {
           <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">
             ⏱️ Time Tracking
           </h3>
-          
+
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-[var(--color-text-secondary)]">Status:</span>
-              <span className={`font-medium ${isTracking ? 'text-green-500' : 'text-gray-500'}`}>
+              <span className="text-[var(--color-text-secondary)]">
+                Status:
+              </span>
+              <span
+                className={`font-medium ${isTracking ? 'text-green-500' : 'text-gray-500'}`}
+              >
                 {isTracking ? 'Tracking' : 'Stopped'}
               </span>
             </div>
-            
+
             <div className="flex gap-2">
               {isTracking ? (
                 <button
@@ -191,11 +203,17 @@ export function ProductivityDashboard() {
 
         {/* Stats */}
         <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg p-6 lg:col-span-2">
-          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">📊 Activity</h3>
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">
+            📊 Activity
+          </h3>
           {stats ? (
-            <div className="text-sm text-[var(--color-text-secondary)]">Stats loaded</div>
+            <div className="text-sm text-[var(--color-text-secondary)]">
+              Stats loaded
+            </div>
           ) : (
-            <div className="text-sm text-[var(--color-text-secondary)]">No data</div>
+            <div className="text-sm text-[var(--color-text-secondary)]">
+              No data
+            </div>
           )}
         </div>
       </div>

@@ -3,11 +3,12 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import GitHubPages from "./GitHubPages";
 
-// Detect if running in Tauri environment
-const isTauri = window.__TAURI__ !== undefined;
+// Force App.tsx for desktop - GitHubPages.tsx only for actual web deployments
+// Tauri apps load from file:// or custom protocols, not http:// or https://
+const isWebDeployment = window.location.protocol === 'http:' || window.location.protocol === 'https:';
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    {isTauri ? <App /> : <GitHubPages />}
+    {isWebDeployment ? <GitHubPages /> : <App />}
   </React.StrictMode>,
 );

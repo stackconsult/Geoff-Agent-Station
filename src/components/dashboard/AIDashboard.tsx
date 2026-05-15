@@ -11,11 +11,18 @@ export function AIDashboard() {
   const [showContext, setShowContext] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showAgents, setShowAgents] = useState(false);
-  const [selectedNote, setSelectedNote] = useState<{ id: string; path: string } | null>(null);
+  const [selectedNote, setSelectedNote] = useState<{
+    id: string;
+    path: string;
+  } | null>(null);
 
   useEffect(() => {
-    const unsubscribe = eventBus.on('note_selected', (data) => {
-      const eventData = data as { type: 'note_selected'; noteId: string; notePath: string };
+    const unsubscribe = eventBus.on('note_selected', data => {
+      const eventData = data as {
+        type: 'note_selected';
+        noteId: string;
+        notePath: string;
+      };
       setSelectedNote({ id: eventData.noteId, path: eventData.notePath });
     });
 
@@ -26,8 +33,13 @@ export function AIDashboard() {
     <div className="h-full flex flex-col bg-[var(--color-bg-primary)]">
       <div className="h-14 border-b border-[var(--color-border)] flex items-center justify-between px-4 bg-[var(--color-bg-secondary)]">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">AI Assistant</h1>
-          <AIModelSelector selectedModel={selectedModel} onModelChange={setSelectedModel} />
+          <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">
+            AI Assistant
+          </h1>
+          <AIModelSelector
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
+          />
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -54,8 +66,19 @@ export function AIDashboard() {
         <div className="flex-1 overflow-hidden">
           <AIChat />
         </div>
-        {showContext && <AIContextPanel isOpen={showContext} onClose={() => setShowContext(false)} />}
-        {showHistory && <AIChatHistory isOpen={showHistory} onClose={() => setShowHistory(false)} onLoadConversation={() => {}} />}
+        {showContext && (
+          <AIContextPanel
+            isOpen={showContext}
+            onClose={() => setShowContext(false)}
+          />
+        )}
+        {showHistory && (
+          <AIChatHistory
+            isOpen={showHistory}
+            onClose={() => setShowHistory(false)}
+            onLoadConversation={() => {}}
+          />
+        )}
         {showAgents && <AgentRegistry />}
       </div>
     </div>

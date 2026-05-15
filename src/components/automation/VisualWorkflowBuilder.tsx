@@ -12,10 +12,24 @@ interface VisualWorkflowBuilderProps {
   onWorkflowSave: (workflow: WorkflowNode[]) => void;
 }
 
-export function VisualWorkflowBuilder({ onWorkflowSave }: VisualWorkflowBuilderProps) {
+export function VisualWorkflowBuilder({
+  onWorkflowSave,
+}: VisualWorkflowBuilderProps) {
   const [nodes, setNodes] = useState<WorkflowNode[]>([
-    { id: '1', type: 'trigger', label: 'Start', position: { x: 100, y: 100 }, connections: ['2'] },
-    { id: '2', type: 'action', label: 'Action', position: { x: 300, y: 100 }, connections: [] }
+    {
+      id: '1',
+      type: 'trigger',
+      label: 'Start',
+      position: { x: 100, y: 100 },
+      connections: ['2'],
+    },
+    {
+      id: '2',
+      type: 'action',
+      label: 'Action',
+      position: { x: 300, y: 100 },
+      connections: [],
+    },
   ]);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
@@ -30,20 +44,25 @@ export function VisualWorkflowBuilder({ onWorkflowSave }: VisualWorkflowBuilderP
     setIsDragging(true);
     setDragOffset({
       x: e.clientX - node.position.x,
-      y: e.clientY - node.position.y
+      y: e.clientY - node.position.y,
     });
   };
 
-  const handleNodeDragMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging || !selectedNode) return;
-    const newX = e.clientX - dragOffset.x;
-    const newY = e.clientY - dragOffset.y;
-    setNodes(nodes => nodes.map(node =>
-      node.id === selectedNode
-        ? { ...node, position: { x: newX, y: newY } }
-        : node
-    ));
-  }, [isDragging, selectedNode, dragOffset]);
+  const handleNodeDragMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isDragging || !selectedNode) return;
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+      setNodes(nodes =>
+        nodes.map(node =>
+          node.id === selectedNode
+            ? { ...node, position: { x: newX, y: newY } }
+            : node
+        )
+      );
+    },
+    [isDragging, selectedNode, dragOffset]
+  );
 
   const handleNodeDragEnd = useCallback(() => {
     setIsDragging(false);
@@ -55,7 +74,7 @@ export function VisualWorkflowBuilder({ onWorkflowSave }: VisualWorkflowBuilderP
       type,
       label: type.charAt(0).toUpperCase() + type.slice(1),
       position: { x: 100 + Math.random() * 200, y: 100 + Math.random() * 200 },
-      connections: []
+      connections: [],
     };
     setNodes([...nodes, newNode]);
   };
@@ -68,7 +87,9 @@ export function VisualWorkflowBuilder({ onWorkflowSave }: VisualWorkflowBuilderP
   return (
     <div className="h-full flex flex-col bg-[var(--color-bg-primary)]">
       <div className="h-14 border-b border-[var(--color-border)] flex items-center justify-between px-4 bg-[var(--color-bg-secondary)]">
-        <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">Visual Workflow Builder</h1>
+        <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">
+          Visual Workflow Builder
+        </h1>
         <div className="flex items-center gap-2">
           <button className="px-3 py-1.5 text-sm bg-[var(--color-accent)] text-white rounded hover:opacity-90">
             Save Workflow
@@ -77,24 +98,41 @@ export function VisualWorkflowBuilder({ onWorkflowSave }: VisualWorkflowBuilderP
       </div>
       <div className="flex-1 flex overflow-hidden">
         <div className="w-64 border-r border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
-          <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Add Node</h3>
+          <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">
+            Add Node
+          </h3>
           <div className="space-y-2">
-            <button onClick={() => addNode('trigger')} className="w-full px-3 py-2 text-sm rounded bg-[var(--color-bg-primary)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
+            <button
+              onClick={() => addNode('trigger')}
+              className="w-full px-3 py-2 text-sm rounded bg-[var(--color-bg-primary)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]"
+            >
               ⚡ Trigger
             </button>
-            <button onClick={() => addNode('action')} className="w-full px-3 py-2 text-sm rounded bg-[var(--color-bg-primary)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
+            <button
+              onClick={() => addNode('action')}
+              className="w-full px-3 py-2 text-sm rounded bg-[var(--color-bg-primary)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]"
+            >
               🔧 Action
             </button>
-            <button onClick={() => addNode('condition')} className="w-full px-3 py-2 text-sm rounded bg-[var(--color-bg-primary)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
+            <button
+              onClick={() => addNode('condition')}
+              className="w-full px-3 py-2 text-sm rounded bg-[var(--color-bg-primary)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]"
+            >
               🔀 Condition
             </button>
-            <button onClick={() => addNode('loop')} className="w-full px-3 py-2 text-sm rounded bg-[var(--color-bg-primary)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]">
+            <button
+              onClick={() => addNode('loop')}
+              className="w-full px-3 py-2 text-sm rounded bg-[var(--color-bg-primary)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)]"
+            >
               🔄 Loop
             </button>
           </div>
         </div>
-        <div className="flex-1 relative bg-[var(--color-bg-primary)] overflow-hidden"
-             onMouseMove={handleNodeDragMove} onMouseUp={handleNodeDragEnd}>
+        <div
+          className="flex-1 relative bg-[var(--color-bg-primary)] overflow-hidden"
+          onMouseMove={handleNodeDragMove}
+          onMouseUp={handleNodeDragEnd}
+        >
           <svg className="w-full h-full">
             {nodes.map(node => (
               <g key={node.id}>
@@ -109,17 +147,29 @@ export function VisualWorkflowBuilder({ onWorkflowSave }: VisualWorkflowBuilderP
                   width={120}
                   height={50}
                   rx={8}
-                  fill={selectedNode === node.id ? 'var(--color-accent)' : 'var(--color-bg-secondary)'}
-                  stroke={selectedNode === node.id ? 'var(--color-accent)' : 'var(--color-border)'}
+                  fill={
+                    selectedNode === node.id
+                      ? 'var(--color-accent)'
+                      : 'var(--color-bg-secondary)'
+                  }
+                  stroke={
+                    selectedNode === node.id
+                      ? 'var(--color-accent)'
+                      : 'var(--color-border)'
+                  }
                   strokeWidth={2}
-                  onMouseDown={(e) => handleNodeDragStart(node.id, e)}
+                  onMouseDown={e => handleNodeDragStart(node.id, e)}
                   className="cursor-move"
                 />
                 <text
                   x={node.position.x + 60}
                   y={node.position.y + 30}
                   textAnchor="middle"
-                  fill={selectedNode === node.id ? 'white' : 'var(--color-text-primary)'}
+                  fill={
+                    selectedNode === node.id
+                      ? 'white'
+                      : 'var(--color-text-primary)'
+                  }
                   fontSize={12}
                 >
                   {node.label}

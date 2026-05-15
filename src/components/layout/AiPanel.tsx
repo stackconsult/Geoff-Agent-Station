@@ -13,7 +13,9 @@ export function AiPanel({ isOpen }: AiPanelProps) {
   return (
     <div className="h-full border-l border-[var(--color-border-primary)]">
       <ErrorBoundary
-        fallback={<ErrorFallback message="AI panel unavailable. Is Ollama running?" />}
+        fallback={
+          <ErrorFallback message="AI panel unavailable. Is Ollama running?" />
+        }
         onReset={() => window.location.reload()}
       >
         <AIChat />

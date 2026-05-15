@@ -14,7 +14,7 @@ class EventBusImpl implements EventBus {
       this.listeners.set(event, new Set());
     }
     this.listeners.get(event)!.add(callback);
-    
+
     return () => this.off(event, callback);
   }
 

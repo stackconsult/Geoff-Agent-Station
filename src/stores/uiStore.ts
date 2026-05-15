@@ -1,11 +1,5 @@
 import { create } from 'zustand';
-
-type SidebarSelection = {
-  kind: 'filter' | 'sectionGroup' | 'folder';
-  filter?: 'all' | 'inbox' | 'archived' | 'favorites' | 'changes' | 'pulse';
-  type?: string;
-  path?: string;
-};
+import type { SidebarSelection } from '../types';
 
 interface UIState {
   aiPanelOpen: boolean;
@@ -20,16 +14,16 @@ interface UIState {
   setShowAutomation: (show: boolean) => void;
 }
 
-export const useUIStore = create<UIState>((set) => ({
+export const useUIStore = create<UIState>(set => ({
   aiPanelOpen: true,
   editorMode: 'rich',
   searchQuery: '',
   sidebarSelection: { kind: 'filter', filter: 'inbox' },
   showAutomation: false,
 
-  toggleAi: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),
-  setEditorMode: (mode) => set({ editorMode: mode }),
-  setSearchQuery: (query) => set({ searchQuery: query }),
-  setSidebarSelection: (selection) => set({ sidebarSelection: selection }),
-  setShowAutomation: (show) => set({ showAutomation: show }),
+  toggleAi: () => set(state => ({ aiPanelOpen: !state.aiPanelOpen })),
+  setEditorMode: mode => set({ editorMode: mode }),
+  setSearchQuery: query => set({ searchQuery: query }),
+  setSidebarSelection: selection => set({ sidebarSelection: selection }),
+  setShowAutomation: show => set({ showAutomation: show }),
 }));

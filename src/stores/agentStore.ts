@@ -22,22 +22,28 @@ interface AgentState {
   updateAgentStatus: (id: string, status: AgentStatus) => void;
 }
 
-export const useAgentStore = create<AgentState>((set) => ({
+export const useAgentStore = create<AgentState>(set => ({
   agents: [],
   activeAgentId: null,
 
-  registerAgent: (agent) => set((state) => ({
-    agents: [...state.agents, { ...agent, id: `agent-${Date.now()}`, createdAt: new Date() }]
-  })),
+  registerAgent: agent =>
+    set(state => ({
+      agents: [
+        ...state.agents,
+        { ...agent, id: `agent-${Date.now()}`, createdAt: new Date() },
+      ],
+    })),
 
-  removeAgent: (id) => set((state) => ({
-    agents: state.agents.filter((a) => a.id !== id),
-    activeAgentId: state.activeAgentId === id ? null : state.activeAgentId
-  })),
+  removeAgent: id =>
+    set(state => ({
+      agents: state.agents.filter(a => a.id !== id),
+      activeAgentId: state.activeAgentId === id ? null : state.activeAgentId,
+    })),
 
-  setActiveAgent: (id) => set({ activeAgentId: id }),
+  setActiveAgent: id => set({ activeAgentId: id }),
 
-  updateAgentStatus: (id, status) => set((state) => ({
-    agents: state.agents.map((a) => (a.id === id ? { ...a, status } : a))
-  }))
+  updateAgentStatus: (id, status) =>
+    set(state => ({
+      agents: state.agents.map(a => (a.id === id ? { ...a, status } : a)),
+    })),
 }));

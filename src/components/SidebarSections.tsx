@@ -19,4 +19,3 @@ export function SidebarSections({ notes }: SidebarSectionsProps) {
     </div>
   );
 }
-

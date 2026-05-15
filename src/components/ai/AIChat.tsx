@@ -49,11 +49,24 @@ export function AIChat() {
 
   const initializeAI = async () => {
     try {
-      const providerConfig = aiSettings.provider === 'ollama'
-        ? { Ollama: { model: aiSettings.model, base_url: aiSettings.baseUrl } }
-        : aiSettings.provider === 'openai'
-        ? { OpenAI: { model: aiSettings.model, base_url: aiSettings.baseUrl } }
-        : { Custom: { model: aiSettings.model, base_url: aiSettings.baseUrl } };
+      const providerConfig =
+        aiSettings.provider === 'ollama'
+          ? {
+              Ollama: { model: aiSettings.model, base_url: aiSettings.baseUrl },
+            }
+          : aiSettings.provider === 'openai'
+            ? {
+                OpenAI: {
+                  model: aiSettings.model,
+                  base_url: aiSettings.baseUrl,
+                },
+              }
+            : {
+                Custom: {
+                  model: aiSettings.model,
+                  base_url: aiSettings.baseUrl,
+                },
+              };
 
       await invoke('ai_initialize', {
         config: {
@@ -76,7 +89,7 @@ export function AIChat() {
     lastRequestTimeRef.current = now;
 
     const userMessage: Message = { role: 'user', content: input };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     const sentInput = input;
     setInput('');
     setIsLoading(true);
@@ -86,16 +99,22 @@ export function AIChat() {
       let streamingWorked = false;
       const streamingIndex = { value: -1 };
 
-      const unlistenChunk = await listen<string>('ai-stream-chunk', (event) => {
+      const unlistenChunk = await listen<string>('ai-stream-chunk', event => {
         if (streamingIndex.value === -1) {
           streamingIndex.value = 0;
-          setMessages((prev) => [...prev, { role: 'assistant', content: event.payload }]);
+          setMessages(prev => [
+            ...prev,
+            { role: 'assistant', content: event.payload },
+          ]);
         } else {
-          setMessages((prev) => {
+          setMessages(prev => {
             const updated = [...prev];
             const last = updated[updated.length - 1];
             if (last?.role === 'assistant') {
-              updated[updated.length - 1] = { ...last, content: last.content + event.payload };
+              updated[updated.length - 1] = {
+                ...last,
+                content: last.content + event.payload,
+              };
             }
             return updated;
           });
@@ -109,32 +128,54 @@ export function AIChat() {
         unlistenDone();
       });
 
-      const unlistenError = await listen<string>('ai-stream-error', async (event) => {
-        unlistenChunk();
-        unlistenDone();
-        unlistenError();
-        if (!streamingWorked) {
-          // Fallback to non-streaming
-          try {
-            const response = await invoke<string>('ai_chat', { message: sentInput });
-            setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
-          } catch (fallbackErr) {
-            setMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${fallbackErr}` }]);
+      const unlistenError = await listen<string>(
+        'ai-stream-error',
+        async event => {
+          unlistenChunk();
+          unlistenDone();
+          unlistenError();
+          if (!streamingWorked) {
+            // Fallback to non-streaming
+            try {
+              const response = await invoke<string>('ai_chat', {
+                message: sentInput,
+              });
+              setMessages(prev => [
+                ...prev,
+                { role: 'assistant', content: response },
+              ]);
+            } catch (fallbackErr) {
+              setMessages(prev => [
+                ...prev,
+                { role: 'assistant', content: `Error: ${fallbackErr}` },
+              ]);
+            }
+          } else {
+            setMessages(prev => [
+              ...prev,
+              { role: 'assistant', content: `Stream error: ${event.payload}` },
+            ]);
           }
-        } else {
-          setMessages((prev) => [...prev, { role: 'assistant', content: `Stream error: ${event.payload}` }]);
+          setIsLoading(false);
         }
-        setIsLoading(false);
-      });
+      );
 
       await invoke('ai_chat_stream', { message: sentInput });
     } catch (error) {
       // Streaming command itself failed — fall back to non-streaming
       try {
-        const response = await invoke<string>('ai_chat', { message: sentInput });
-        setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
+        const response = await invoke<string>('ai_chat', {
+          message: sentInput,
+        });
+        setMessages(prev => [
+          ...prev,
+          { role: 'assistant', content: response },
+        ]);
       } catch (fallbackErr) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${fallbackErr}` }]);
+        setMessages(prev => [
+          ...prev,
+          { role: 'assistant', content: `Error: ${fallbackErr}` },
+        ]);
       }
       setIsLoading(false);
     }
@@ -178,7 +219,8 @@ export function AIChat() {
             <div className="text-center max-w-md">
               <p className="text-lg mb-2">👋 Hello! I'm your AI assistant</p>
               <p className="text-sm">
-                Ask me anything about automation, coding, or productivity. I can help you:
+                Ask me anything about automation, coding, or productivity. I can
+                help you:
               </p>
               <ul className="text-sm mt-4 space-y-2 text-left">
                 <li>• Create and debug workflows</li>
@@ -226,8 +268,8 @@ export function AIChat() {
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            onChange={e => setInput(e.target.value)}
+            onKeyPress={e => e.key === 'Enter' && sendMessage()}
             placeholder="Type your message..."
             className="flex-1 px-4 py-2 rounded-md bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
             disabled={!isInitialized || isLoading}

@@ -21,11 +21,16 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   error: null,
 
   loadNotes: async (path: string) => {
+    console.log('[vaultStore] Loading notes from:', path);
     set({ isLoading: true, error: null });
     try {
-      const notes: VaultEntry[] = await invoke('scan_vault', { vaultPath: path });
+      const notes: VaultEntry[] = await invoke('scan_vault', {
+        vaultPath: path,
+      });
+      console.log('[vaultStore] Loaded', notes.length, 'notes');
       set({ vaultPath: path, notes, isLoading: false });
     } catch (error) {
+      console.error('[vaultStore] Failed to load notes:', error);
       set({ error: String(error), isLoading: false });
     }
   },

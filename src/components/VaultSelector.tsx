@@ -1,5 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Folder, Clock, AlertCircle, Check, FolderOpen, Search, X, RefreshCw } from 'lucide-react';
+import {
+  Folder,
+  Clock,
+  AlertCircle,
+  Check,
+  FolderOpen,
+  Search,
+  X,
+  RefreshCw,
+} from 'lucide-react';
 
 interface DetectedVault {
   path: string;
@@ -36,15 +45,23 @@ function VaultCardSkeleton() {
   );
 }
 
-export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) {
+export function VaultSelector({
+  onVaultSelect,
+  isLoading,
+}: VaultSelectorProps) {
   const [selectedPath, setSelectedPath] = useState('');
   const [inputPath, setInputPath] = useState('');
   const [detectedVaults, setDetectedVaults] = useState<DetectedVault[]>([]);
   const [recentVaults, setRecentVaults] = useState<RecentVault[]>([]);
   const [isDetecting, setIsDetecting] = useState(false);
   const [isOpeningDialog, setIsOpeningDialog] = useState(false);
-  const [error, setError] = useState<{ message: string; action?: { label: string; onClick: () => void } } | null>(null);
-  const [activeTab, setActiveTab] = useState<'suggested' | 'recent'>('suggested');
+  const [error, setError] = useState<{
+    message: string;
+    action?: { label: string; onClick: () => void };
+  } | null>(null);
+  const [activeTab, setActiveTab] = useState<'suggested' | 'recent'>(
+    'suggested'
+  );
   const [isInputFocused, setIsInputFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -81,7 +98,7 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
       console.error('Failed to detect vaults:', err);
       setError({
         message: 'Could not scan for vaults automatically',
-        action: { label: 'Try Again', onClick: detectVaults }
+        action: { label: 'Try Again', onClick: detectVaults },
       });
     } finally {
       setIsDetecting(false);
@@ -101,7 +118,7 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
       console.error('Failed to open folder dialog:', err);
       setError({
         message: 'Could not open folder picker',
-        action: { label: 'Retry', onClick: openFolderDialog }
+        action: { label: 'Retry', onClick: openFolderDialog },
       });
     } finally {
       setIsOpeningDialog(false);
@@ -113,11 +130,11 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
     try {
       const { invoke } = await import('@tauri-apps/api/core');
       const isValid: boolean = await invoke('validate_vault_path', { path });
-      
+
       if (!isValid) {
         setError({
           message: 'This folder does not contain any markdown files',
-          action: { label: 'Browse Again', onClick: openFolderDialog }
+          action: { label: 'Browse Again', onClick: openFolderDialog },
         });
         return;
       }
@@ -129,7 +146,7 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
       console.error('Failed to validate path:', err);
       setError({
         message: 'Could not verify vault contents',
-        action: { label: 'Try Again', onClick: () => validateAndSelect(path) }
+        action: { label: 'Try Again', onClick: () => validateAndSelect(path) },
       });
     }
   };
@@ -171,13 +188,16 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
   };
 
   // Filter vaults for display based on active tab
-  const displayedVaults = activeTab === 'recent' ? recentVaults.map(v => ({
-    path: v.path,
-    name: v.name,
-    note_count: 0,
-    last_modified: `Opened ${new Date(v.opened_at).toLocaleDateString()}`,
-    isRecent: true
-  })) : detectedVaults.map(v => ({ ...v, isRecent: false }));
+  const displayedVaults =
+    activeTab === 'recent'
+      ? recentVaults.map(v => ({
+          path: v.path,
+          name: v.name,
+          note_count: 0,
+          last_modified: `Opened ${new Date(v.opened_at).toLocaleDateString()}`,
+          isRecent: true,
+        }))
+      : detectedVaults.map(v => ({ ...v, isRecent: false }));
 
   const hasVaults = displayedVaults.length > 0;
   const hasAnyVaults = detectedVaults.length > 0 || recentVaults.length > 0;
@@ -191,7 +211,9 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
             <FolderOpen size={48} strokeWidth={1.5} />
           </div>
           <h1>Open a Vault</h1>
-          <p className="vault-subtitle">Select your Obsidian vault folder to continue</p>
+          <p className="vault-subtitle">
+            Select your Obsidian vault folder to continue
+          </p>
         </div>
 
         {/* Primary CTA */}
@@ -213,16 +235,16 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
               <span className="vault-error-message">{error.message}</span>
               <div className="vault-error-actions">
                 {error.action && (
-                  <button 
-                    className="vault-error-action-btn" 
+                  <button
+                    className="vault-error-action-btn"
                     onClick={error.action.onClick}
                     aria-label={error.action.label}
                   >
                     {error.action.label}
                   </button>
                 )}
-                <button 
-                  className="vault-error-dismiss" 
+                <button
+                  className="vault-error-dismiss"
                   onClick={clearError}
                   aria-label="Dismiss error"
                 >
@@ -242,7 +264,11 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
 
         {/* Tabs - only show if we have any vaults */}
         {hasAnyVaults && (
-          <div className="vault-tabs" role="tablist" aria-label="Vault selection tabs">
+          <div
+            className="vault-tabs"
+            role="tablist"
+            aria-label="Vault selection tabs"
+          >
             {detectedVaults.length > 0 && (
               <button
                 role="tab"
@@ -278,17 +304,25 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
         <div className="vault-list-wrapper">
           {isDetecting ? (
             // Skeleton loading state
-            <div className="vault-grid" role="status" aria-label="Loading vaults">
+            <div
+              className="vault-grid"
+              role="status"
+              aria-label="Loading vaults"
+            >
               <VaultCardSkeleton />
               <VaultCardSkeleton />
               <VaultCardSkeleton />
             </div>
           ) : hasVaults ? (
-            <div 
-              className="vault-grid" 
-              role="tabpanel" 
-              id={activeTab === 'suggested' ? 'suggested-panel' : 'recent-panel'}
-              aria-labelledby={activeTab === 'suggested' ? 'suggested-tab' : 'recent-tab'}
+            <div
+              className="vault-grid"
+              role="tabpanel"
+              id={
+                activeTab === 'suggested' ? 'suggested-panel' : 'recent-panel'
+              }
+              aria-labelledby={
+                activeTab === 'suggested' ? 'suggested-tab' : 'recent-tab'
+              }
             >
               {displayedVaults.map((vault, index) => (
                 <button
@@ -300,7 +334,11 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="vault-card-icon" aria-hidden="true">
-                    {vault.isRecent ? <Clock size={24} /> : <Folder size={24} />}
+                    {vault.isRecent ? (
+                      <Clock size={24} />
+                    ) : (
+                      <Folder size={24} />
+                    )}
                   </div>
                   <div className="vault-card-info">
                     <div className="vault-card-name">{vault.name}</div>
@@ -322,7 +360,10 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
                       <Check size={16} />
                     </div>
                   ) : (
-                    <div className="vault-card-indicator-placeholder" aria-hidden="true" />
+                    <div
+                      className="vault-card-indicator-placeholder"
+                      aria-hidden="true"
+                    />
                   )}
                 </button>
               ))}
@@ -334,20 +375,25 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
                 <Folder size={40} />
               </div>
               <p className="vault-empty-title">
-                {activeTab === 'suggested' ? 'No vaults found' : 'No recent vaults'}
+                {activeTab === 'suggested'
+                  ? 'No vaults found'
+                  : 'No recent vaults'}
               </p>
               <p className="vault-empty-subtitle">
-                {activeTab === 'suggested' 
+                {activeTab === 'suggested'
                   ? 'We could not find any Obsidian vaults automatically'
                   : 'Vaults you open will appear here for quick access'}
               </p>
               {activeTab === 'suggested' && (
-                <button 
-                  className="vault-empty-action" 
+                <button
+                  className="vault-empty-action"
                   onClick={detectVaults}
                   disabled={isDetecting}
                 >
-                  <RefreshCw size={16} className={isDetecting ? 'spinning' : ''} />
+                  <RefreshCw
+                    size={16}
+                    className={isDetecting ? 'spinning' : ''}
+                  />
                   Scan Again
                 </button>
               )}
@@ -356,8 +402,10 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
         </div>
 
         {/* Manual entry - collapsible */}
-        <div className={`vault-manual-section ${isInputFocused ? 'expanded' : ''}`}>
-          <button 
+        <div
+          className={`vault-manual-section ${isInputFocused ? 'expanded' : ''}`}
+        >
+          <button
             className="vault-manual-toggle"
             onClick={() => {
               setIsInputFocused(!isInputFocused);
@@ -369,13 +417,17 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
             aria-controls="manual-input-form"
           >
             <span>Enter path manually</span>
-            <span className={`vault-manual-chevron ${isInputFocused ? 'expanded' : ''}`}>›</span>
+            <span
+              className={`vault-manual-chevron ${isInputFocused ? 'expanded' : ''}`}
+            >
+              ›
+            </span>
           </button>
-          
+
           {isInputFocused && (
-            <form 
+            <form
               id="manual-input-form"
-              onSubmit={handleManualSubmit} 
+              onSubmit={handleManualSubmit}
               className="vault-manual-form"
             >
               <div className="vault-input-group">
@@ -383,7 +435,7 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
                   ref={inputRef}
                   type="text"
                   value={inputPath}
-                  onChange={(e) => setInputPath(e.target.value)}
+                  onChange={e => setInputPath(e.target.value)}
                   placeholder="C:\Users\You\Documents\Obsidian Vault"
                   className="vault-path-input"
                   disabled={isLoading}
@@ -408,4 +460,3 @@ export function VaultSelector({ onVaultSelect, isLoading }: VaultSelectorProps) 
     </div>
   );
 }
-

@@ -20,7 +20,9 @@ describe('App — save note (H5)', () => {
 
   it('invoke load_note_content returns content string', async () => {
     vi.mocked(invoke).mockResolvedValueOnce('# Loaded Note');
-    const result = await invoke<string>('load_note_content', { path: '/tmp/test-vault/note.md' });
+    const result = await invoke<string>('load_note_content', {
+      path: '/tmp/test-vault/note.md',
+    });
     expect(result).toBe('# Loaded Note');
   });
 });

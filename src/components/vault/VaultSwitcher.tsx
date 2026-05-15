@@ -12,7 +12,12 @@ interface VaultConfig {
 export function VaultSwitcher() {
   const { vaultPath, loadNotes } = useVaultStore();
   const [vaults, setVaults] = useState<VaultConfig[]>([
-    { id: '1', path: vaultPath || '', name: vaultPath?.split(/[\\/]/).pop() || 'Default', isActive: true }
+    {
+      id: '1',
+      path: vaultPath || '',
+      name: vaultPath?.split(/[\\/]/).pop() || 'Default',
+      isActive: true,
+    },
   ]);
 
   const handleSwitchVault = (vaultId: string) => {
@@ -28,21 +33,21 @@ export function VaultSwitcher() {
       const selected = await open({
         directory: true,
         multiple: false,
-        title: 'Select Vault Directory'
+        title: 'Select Vault Directory',
       });
-      
+
       if (selected && typeof selected === 'string') {
         const vaultName = selected.split(/[\\/]/).pop() || 'New Vault';
         const newVault: VaultConfig = {
           id: `vault-${Date.now()}`,
           path: selected,
           name: vaultName,
-          isActive: true
+          isActive: true,
         };
-        
+
         setVaults(vaults.map(v => ({ ...v, isActive: false })));
         setVaults([...vaults, newVault]);
-        
+
         loadNotes(selected);
       }
     } catch (error) {
@@ -54,12 +59,14 @@ export function VaultSwitcher() {
     <div className="p-4">
       <h3 className="text-sm font-semibold mb-3">Vault Switcher</h3>
       <div className="space-y-2">
-        {vaults.map((vault) => (
+        {vaults.map(vault => (
           <button
             key={vault.id}
             onClick={() => handleSwitchVault(vault.id)}
             className={`w-full text-left px-3 py-2 rounded border ${
-              vault.isActive ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white' : 'bg-[var(--color-bg-secondary)] border-[var(--color-border)] text-[var(--color-text-primary)]'
+              vault.isActive
+                ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white'
+                : 'bg-[var(--color-bg-secondary)] border-[var(--color-border)] text-[var(--color-text-primary)]'
             }`}
           >
             <div className="font-medium">{vault.name}</div>

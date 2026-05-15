@@ -15,8 +15,8 @@ export function ErrorDisplay({ error, onDismiss }: ErrorDisplayProps) {
       <div className="error-header">
         <span className="error-icon">⚠️</span>
         <span className="error-title">Something went wrong</span>
-        <button 
-          className="error-dismiss" 
+        <button
+          className="error-dismiss"
           onClick={() => {
             setIsExpanded(false);
             onDismiss?.();
@@ -25,21 +25,21 @@ export function ErrorDisplay({ error, onDismiss }: ErrorDisplayProps) {
           ✕
         </button>
       </div>
-      
-      <div className="error-message">
-        {error}
-      </div>
-      
-      <button 
+
+      <div className="error-message">{error}</div>
+
+      <button
         className="error-toggle"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {isExpanded ? 'Show less' : 'Show details'}
       </button>
-      
+
       {isExpanded && (
         <div className="error-details">
-          <p><strong>What to try:</strong></p>
+          <p>
+            <strong>What to try:</strong>
+          </p>
           <ul>
             <li>Check that the vault path is correct</li>
             <li>Make sure the folder exists and contains .md files</li>
@@ -51,4 +51,3 @@ export function ErrorDisplay({ error, onDismiss }: ErrorDisplayProps) {
     </div>
   );
 }
-

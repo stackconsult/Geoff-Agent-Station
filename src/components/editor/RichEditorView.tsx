@@ -12,12 +12,20 @@ export type EditorError =
 // ─── Props ───
 interface RichEditorViewProps {
   content: string;
-  onChange?: (content: string, metadata: { isValid: boolean; errors?: EditorError[] }) => void;
+  onChange?: (
+    content: string,
+    metadata: { isValid: boolean; errors?: EditorError[] }
+  ) => void;
   onError?: (error: EditorError) => void;
   readOnly?: boolean;
 }
 
-export function RichEditorView({ content, onChange, onError, readOnly = false }: RichEditorViewProps) {
+export function RichEditorView({
+  content,
+  onChange,
+  onError,
+  readOnly = false,
+}: RichEditorViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -36,13 +44,13 @@ export function RichEditorView({ content, onChange, onError, readOnly = false }:
       onError?.(err);
       return undefined;
     }
-  // content intentionally not in deps — initial load only; parent controls updates
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // content intentionally not in deps — initial load only; parent controls updates
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const editor = useCreateBlockNote({
     initialContent,
-    uploadFile: async (file) => {
+    uploadFile: async file => {
       return URL.createObjectURL(file);
     },
   });
@@ -82,11 +90,28 @@ export function RichEditorView({ content, onChange, onError, readOnly = false }:
     return (
       <div className="flex flex-col items-center justify-center h-full p-6 text-center">
         <div className="text-red-400 mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
         </div>
-        <h3 className="text-lg font-semibold text-red-300 mb-1">Editor Error</h3>
+        <h3 className="text-lg font-semibold text-red-300 mb-1">
+          Editor Error
+        </h3>
         <p className="text-sm text-[var(--color-text-secondary)] max-w-md">
-          The rich editor failed to load. Switch to <strong>Raw mode</strong> to edit this note safely.
+          The rich editor failed to load. Switch to <strong>Raw mode</strong> to
+          edit this note safely.
         </p>
       </div>
     );
@@ -97,7 +122,9 @@ export function RichEditorView({ content, onChange, onError, readOnly = false }:
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent-primary)]" />
-        <span className="ml-2 text-[var(--color-text-secondary)]">Loading editor...</span>
+        <span className="ml-2 text-[var(--color-text-secondary)]">
+          Loading editor...
+        </span>
       </div>
     );
   }

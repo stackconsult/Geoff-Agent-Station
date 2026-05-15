@@ -34,7 +34,9 @@ describe('AIChat', () => {
     render(<AIChat />);
     await waitFor(() => screen.getByText('Connected to Ollama'));
 
-    const input = screen.getByPlaceholderText('Type your message...') as HTMLInputElement;
+    const input = screen.getByPlaceholderText(
+      'Type your message...'
+    ) as HTMLInputElement;
     await userEvent.type(input, 'Hello AI');
     fireEvent.click(screen.getByText('Send'));
 
@@ -76,7 +78,9 @@ describe('AIChat', () => {
     });
 
     // ai_chat should have been called exactly once — rate limiter blocked the second
-    const chatCalls = mockInvoke.mock.calls.filter((args) => args[0] === 'ai_chat');
+    const chatCalls = mockInvoke.mock.calls.filter(
+      args => args[0] === 'ai_chat'
+    );
     expect(chatCalls.length).toBe(1);
   });
 });

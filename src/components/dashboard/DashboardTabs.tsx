@@ -8,10 +8,16 @@ interface DashboardTabsProps {
   onRemove: (id: string) => void;
 }
 
-export function DashboardTabs({ dashboards, activeId, onSelect, onAdd, onRemove }: DashboardTabsProps) {
+export function DashboardTabs({
+  dashboards,
+  activeId,
+  onSelect,
+  onAdd,
+  onRemove,
+}: DashboardTabsProps) {
   return (
     <div className="h-12 border-b border-[var(--color-border)] flex items-center px-4 gap-2 bg-[var(--color-bg-secondary)]">
-      {dashboards.map((dashboard) => (
+      {dashboards.map(dashboard => (
         <button
           key={dashboard.id}
           onClick={() => onSelect(dashboard.id)}
@@ -25,7 +31,7 @@ export function DashboardTabs({ dashboards, activeId, onSelect, onAdd, onRemove 
           <span>{dashboard.title}</span>
           {dashboards.length > 1 && (
             <span
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onRemove(dashboard.id);
               }}

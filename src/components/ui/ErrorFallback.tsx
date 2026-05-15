@@ -6,7 +6,10 @@ interface ErrorFallbackProps {
   onReset?: () => void;
 }
 
-export function ErrorFallback({ message = 'Something went wrong', onReset }: ErrorFallbackProps) {
+export function ErrorFallback({
+  message = 'Something went wrong',
+  onReset,
+}: ErrorFallbackProps) {
   return (
     <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-[var(--color-bg-secondary)]">
       <div className="text-amber-400 mb-3">

@@ -8,7 +8,12 @@ interface EditorProps {
   onSave: (path: string, content: string) => Promise<void>;
 }
 
-export function Editor({ currentNote, onRevealFile, onPaste, onSave }: EditorProps) {
+export function Editor({
+  currentNote,
+  onRevealFile,
+  onPaste,
+  onSave,
+}: EditorProps) {
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -54,13 +59,13 @@ export function Editor({ currentNote, onRevealFile, onPaste, onSave }: EditorPro
   // Auto-save with debounce (2 seconds after typing stops)
   useEffect(() => {
     if (!currentNote || !content) return;
-    
+
     const timeoutId = setTimeout(() => {
       if (!isSaving) {
         handleSave();
       }
     }, 2000);
-    
+
     return () => clearTimeout(timeoutId);
   }, [content, currentNote?.path]);
 
@@ -85,11 +90,10 @@ export function Editor({ currentNote, onRevealFile, onPaste, onSave }: EditorPro
       </div>
       <textarea
         value={content}
-        onChange={(e) => setContent(e.target.value)}
+        onChange={e => setContent(e.target.value)}
         onPaste={onPaste}
         placeholder="Start writing..."
       />
     </div>
   );
 }
-

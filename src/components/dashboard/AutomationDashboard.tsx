@@ -9,11 +9,11 @@ export function AutomationDashboard() {
   const [executionSteps, setExecutionSteps] = useState([]);
 
   useEffect(() => {
-    const unsubscribeNote = eventBus.on('note_selected', (data) => {
+    const unsubscribeNote = eventBus.on('note_selected', data => {
       console.log('AutomationDashboard received note_selected:', data);
     });
 
-    const unsubscribeAgent = eventBus.on('agent_started', (data) => {
+    const unsubscribeAgent = eventBus.on('agent_started', data => {
       console.log('AutomationDashboard received agent_started:', data);
     });
 
@@ -26,7 +26,9 @@ export function AutomationDashboard() {
   return (
     <div className="h-full flex flex-col bg-[var(--color-bg-primary)]">
       <div className="h-14 border-b border-[var(--color-border)] flex items-center justify-between px-4 bg-[var(--color-bg-secondary)]">
-        <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">Automation Dashboard</h1>
+        <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">
+          Automation Dashboard
+        </h1>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setView('visual')}
@@ -49,9 +51,13 @@ export function AutomationDashboard() {
         </div>
       </div>
       <div className="flex-1 flex overflow-hidden">
-        {view === 'visual' && <VisualWorkflowBuilder onWorkflowSave={() => {}} />}
+        {view === 'visual' && (
+          <VisualWorkflowBuilder onWorkflowSave={() => {}} />
+        )}
         {view === 'list' && <WorkflowBuilder />}
-        {view === 'monitor' && <WorkflowExecutionMonitor steps={executionSteps} isRunning={false} />}
+        {view === 'monitor' && (
+          <WorkflowExecutionMonitor steps={executionSteps} isRunning={false} />
+        )}
       </div>
     </div>
   );

@@ -21,7 +21,10 @@ export function useAutoGit(vaultPath: string) {
     const runAutomaticCheckpoint = async () => {
       try {
         const { invoke } = await import('@tauri-apps/api/core');
-        await invoke('git_commit', { vaultPath, message: 'Auto-saved changes' });
+        await invoke('git_commit', {
+          vaultPath,
+          message: 'Auto-saved changes',
+        });
       } catch (error) {
         console.error('Failed to auto-commit:', error);
       }
@@ -50,4 +53,3 @@ export function useAutoGit(vaultPath: string) {
 
   return { isIdle, hasChanges, setHasChanges };
 }
-

@@ -14,7 +14,7 @@ export function NoteList({ notes, currentNote, onNoteSelect }: NoteListProps) {
   const handleOrganize = async () => {
     await organizeSelectedNotes(selectedNotes, {
       tags: ['organized'],
-      type: 'processed'
+      type: 'processed',
     });
     setSelectedNotes([]);
   };
@@ -24,7 +24,7 @@ export function NoteList({ notes, currentNote, onNoteSelect }: NoteListProps) {
       {notes.length === 0 && (
         <div className="empty-notes">No notes found in vault</div>
       )}
-      {notes.map((note) => (
+      {notes.map(note => (
         <div
           key={note.path}
           className={`note-item ${currentNote?.path === note.path ? 'active' : ''}`}
@@ -34,7 +34,7 @@ export function NoteList({ notes, currentNote, onNoteSelect }: NoteListProps) {
             type="checkbox"
             id={`note-${note.path}`}
             checked={selectedNotes.includes(note.path)}
-            onChange={(e) => {
+            onChange={e => {
               e.stopPropagation();
               if (e.target.checked) {
                 setSelectedNotes([...selectedNotes, note.path]);
@@ -52,4 +52,3 @@ export function NoteList({ notes, currentNote, onNoteSelect }: NoteListProps) {
     </div>
   );
 }
-

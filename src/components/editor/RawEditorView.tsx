@@ -1,11 +1,33 @@
 import { useEffect, useRef } from 'react';
 import { EditorState } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine } from '@codemirror/view';
+import {
+  EditorView,
+  keymap,
+  lineNumbers,
+  highlightActiveLineGutter,
+  highlightSpecialChars,
+  drawSelection,
+  dropCursor,
+  rectangularSelection,
+  crosshairCursor,
+  highlightActiveLine,
+} from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
-import { syntaxHighlighting, defaultHighlightStyle, bracketMatching, foldGutter, indentOnInput } from '@codemirror/language';
+import {
+  syntaxHighlighting,
+  defaultHighlightStyle,
+  bracketMatching,
+  foldGutter,
+  indentOnInput,
+} from '@codemirror/language';
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
-import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
+import {
+  autocompletion,
+  completionKeymap,
+  closeBrackets,
+  closeBracketsKeymap,
+} from '@codemirror/autocomplete';
 
 interface RawEditorViewProps {
   content: string;
@@ -13,7 +35,11 @@ interface RawEditorViewProps {
   readOnly?: boolean;
 }
 
-export function RawEditorView({ content, onChange, readOnly = false }: RawEditorViewProps) {
+export function RawEditorView({
+  content,
+  onChange,
+  readOnly = false,
+}: RawEditorViewProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
@@ -26,7 +52,8 @@ export function RawEditorView({ content, onChange, readOnly = false }: RawEditor
         fontSize: '14px',
       },
       '.cm-content': {
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+        fontFamily:
+          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
         padding: '16px',
       },
       '.cm-gutters': {
@@ -47,7 +74,7 @@ export function RawEditorView({ content, onChange, readOnly = false }: RawEditor
       },
     });
 
-    const updateListener = EditorView.updateListener.of((update) => {
+    const updateListener = EditorView.updateListener.of(update => {
       if (update.docChanged) {
         onChange?.(update.state.doc.toString());
       }
@@ -103,7 +130,11 @@ export function RawEditorView({ content, onChange, readOnly = false }: RawEditor
   useEffect(() => {
     if (viewRef.current && content !== viewRef.current.state.doc.toString()) {
       viewRef.current.dispatch({
-        changes: { from: 0, to: viewRef.current.state.doc.length, insert: content },
+        changes: {
+          from: 0,
+          to: viewRef.current.state.doc.length,
+          insert: content,
+        },
       });
     }
   }, [content]);

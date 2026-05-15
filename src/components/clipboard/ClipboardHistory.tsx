@@ -40,7 +40,9 @@ export function ClipboardHistory() {
 
   const searchEntries = async (query: string) => {
     try {
-      const results = await invoke<ClipboardEntry[]>('clipboard_search', { query });
+      const results = await invoke<ClipboardEntry[]>('clipboard_search', {
+        query,
+      });
       setFilteredEntries(results);
     } catch (error) {
       console.error('Failed to search clipboard:', error);
@@ -75,7 +77,9 @@ export function ClipboardHistory() {
   };
 
   const clearHistory = async () => {
-    if (window.confirm('Are you sure you want to clear all clipboard history?')) {
+    if (
+      window.confirm('Are you sure you want to clear all clipboard history?')
+    ) {
       try {
         await invoke('clipboard_clear_history');
         await loadHistory();
@@ -103,7 +107,7 @@ export function ClipboardHistory() {
         <input
           type="text"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={e => setSearchQuery(e.target.value)}
           placeholder="Search clipboard history..."
           className="w-full px-4 py-2 rounded-md bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
         />
@@ -119,7 +123,7 @@ export function ClipboardHistory() {
             </div>
           </div>
         ) : (
-          filteredEntries.map((entry) => (
+          filteredEntries.map(entry => (
             <div
               key={entry.id}
               className="p-3 rounded-md bg-[var(--color-bg-secondary)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors group"

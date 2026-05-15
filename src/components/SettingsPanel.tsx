@@ -44,25 +44,36 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 w-[500px] max-w-[90vw] border border-[var(--color-border-primary)]">
-        <h2 className="text-xl font-semibold mb-4 text-[var(--color-text-primary)]">Settings</h2>
+        <h2 className="text-xl font-semibold mb-4 text-[var(--color-text-primary)]">
+          Settings
+        </h2>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1 text-[var(--color-text-secondary)]">Vault Path</label>
+            <label className="block text-sm font-medium mb-1 text-[var(--color-text-secondary)]">
+              Vault Path
+            </label>
             <input
               type="text"
               value={vaultPath}
-              onChange={(e) => setVaultPath(e.target.value)}
+              onChange={e => setVaultPath(e.target.value)}
               className="w-full px-3 py-2 bg-[var(--color-bg-primary)] border border-[var(--color-border-primary)] rounded text-[var(--color-text-primary)]"
               placeholder="/path/to/vault"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-[var(--color-text-secondary)]">AI Provider</label>
+            <label className="block text-sm font-medium mb-1 text-[var(--color-text-secondary)]">
+              AI Provider
+            </label>
             <select
               value={aiSettings.provider}
-              onChange={(e) => setAiSettings({ ...aiSettings, provider: e.target.value as AISettings['provider'] })}
+              onChange={e =>
+                setAiSettings({
+                  ...aiSettings,
+                  provider: e.target.value as AISettings['provider'],
+                })
+              }
               className="w-full px-3 py-2 bg-[var(--color-bg-primary)] border border-[var(--color-border-primary)] rounded text-[var(--color-text-primary)]"
             >
               <option value="ollama">Ollama</option>
@@ -72,36 +83,51 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-[var(--color-text-secondary)]">Model</label>
+            <label className="block text-sm font-medium mb-1 text-[var(--color-text-secondary)]">
+              Model
+            </label>
             <input
               type="text"
               value={aiSettings.model}
-              onChange={(e) => setAiSettings({ ...aiSettings, model: e.target.value })}
+              onChange={e =>
+                setAiSettings({ ...aiSettings, model: e.target.value })
+              }
               className="w-full px-3 py-2 bg-[var(--color-bg-primary)] border border-[var(--color-border-primary)] rounded text-[var(--color-text-primary)]"
               placeholder="llama3.2"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-[var(--color-text-secondary)]">Base URL</label>
+            <label className="block text-sm font-medium mb-1 text-[var(--color-text-secondary)]">
+              Base URL
+            </label>
             <input
               type="text"
               value={aiSettings.baseUrl}
-              onChange={(e) => setAiSettings({ ...aiSettings, baseUrl: e.target.value })}
+              onChange={e =>
+                setAiSettings({ ...aiSettings, baseUrl: e.target.value })
+              }
               className="w-full px-3 py-2 bg-[var(--color-bg-primary)] border border-[var(--color-border-primary)] rounded text-[var(--color-text-primary)]"
               placeholder="http://localhost:11434"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-[var(--color-text-secondary)]">Temperature: {aiSettings.temperature}</label>
+            <label className="block text-sm font-medium mb-1 text-[var(--color-text-secondary)]">
+              Temperature: {aiSettings.temperature}
+            </label>
             <input
               type="range"
               min="0"
               max="2"
               step="0.1"
               value={aiSettings.temperature}
-              onChange={(e) => setAiSettings({ ...aiSettings, temperature: parseFloat(e.target.value) })}
+              onChange={e =>
+                setAiSettings({
+                  ...aiSettings,
+                  temperature: parseFloat(e.target.value),
+                })
+              }
               className="w-full"
             />
           </div>

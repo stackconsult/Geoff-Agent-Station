@@ -15,7 +15,12 @@ interface RestoreBackupDialogProps {
   vaultPath: string;
 }
 
-export function RestoreBackupDialog({ isOpen, onClose, onRestore, vaultPath }: RestoreBackupDialogProps) {
+export function RestoreBackupDialog({
+  isOpen,
+  onClose,
+  onRestore,
+  vaultPath,
+}: RestoreBackupDialogProps) {
   const [backups, setBackups] = useState<BackupFile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -23,7 +28,9 @@ export function RestoreBackupDialog({ isOpen, onClose, onRestore, vaultPath }: R
     if (!vaultPath) return;
     setIsLoading(true);
     try {
-      const files: BackupFile[] = await invoke('list_backup_files', { vaultPath });
+      const files: BackupFile[] = await invoke('list_backup_files', {
+        vaultPath,
+      });
       setBackups(files);
     } catch (error) {
       console.error('Failed to load backups:', error);
@@ -47,24 +54,38 @@ export function RestoreBackupDialog({ isOpen, onClose, onRestore, vaultPath }: R
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 w-[600px] max-w-[90vw] border border-[var(--color-border-primary)]">
-        <h2 className="text-xl font-semibold mb-4 text-[var(--color-text-primary)]">Restore from Backup</h2>
-        
+        <h2 className="text-xl font-semibold mb-4 text-[var(--color-text-primary)]">
+          Restore from Backup
+        </h2>
+
         {isLoading ? (
-          <div className="text-center py-8 text-[var(--color-text-secondary)]">Loading backups...</div>
+          <div className="text-center py-8 text-[var(--color-text-secondary)]">
+            Loading backups...
+          </div>
         ) : backups.length === 0 ? (
-          <div className="text-center py-8 text-[var(--color-text-secondary)]">No backup files found</div>
+          <div className="text-center py-8 text-[var(--color-text-secondary)]">
+            No backup files found
+          </div>
         ) : (
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
-            {backups.map((backup) => (
-              <div key={backup.path} className="flex items-center justify-between p-3 bg-[var(--color-bg-primary)] rounded border border-[var(--color-border-primary)]">
+            {backups.map(backup => (
+              <div
+                key={backup.path}
+                className="flex items-center justify-between p-3 bg-[var(--color-bg-primary)] rounded border border-[var(--color-border-primary)]"
+              >
                 <div className="flex-1">
-                  <div className="font-medium text-[var(--color-text-primary)]">{backup.originalPath}</div>
+                  <div className="font-medium text-[var(--color-text-primary)]">
+                    {backup.originalPath}
+                  </div>
                   <div className="text-sm text-[var(--color-text-secondary)]">
-                    {new Date(backup.modified).toLocaleString()} • {(backup.size / 1024).toFixed(1)} KB
+                    {new Date(backup.modified).toLocaleString()} •{' '}
+                    {(backup.size / 1024).toFixed(1)} KB
                   </div>
                 </div>
                 <button
-                  onClick={() => handleRestore(backup.path, backup.originalPath)}
+                  onClick={() =>
+                    handleRestore(backup.path, backup.originalPath)
+                  }
                   className="px-3 py-1 bg-[var(--color-accent)] text-white rounded text-sm"
                 >
                   Restore
