@@ -12,8 +12,8 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@blocknote/core": "^0.50.0",
-    "@blocknote/react": "^0.50.0",
+    "@blocknote/core": "^0.51.0",
+    "@blocknote/react": "^0.51.0",
     "@codemirror/autocomplete": "^6.20.2",
     "@codemirror/commands": "^6.10.3",
     "@codemirror/lang-markdown": "^6.5.0",
@@ -40,7 +40,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.38.0",
     "lodash": "^4.18.1",
-    "lucide-react": "^0.468.0",
+    "lucide-react": "^1.16.0",
     "nanoid": "^5.1.11",
     "react": "^19.1.0",
     "react-devtools": "^7.0.1",
@@ -49,7 +49,7 @@
     "react-router-dom": "^7.15.0",
     "socket.io-client": "^4.8.3",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^2.6.0",
+    "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.13"
   },
@@ -63,15 +63,15 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^25.6.2",
+    "@types/node": "^25.8.0",
     "@types/react": "^19.2.14",
     "@types/react-router-dom": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",
-    "@vitejs/plugin-react": "^4.6.0",
+    "@vitejs/plugin-react": "^6.0.2",
     "@vitest/ui": "^4.1.6",
     "autoprefixer": "^10.5.0",
-    "eslint": "^9.39.4",
+    "eslint": "^10.4.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-react": "^7.37.5",
@@ -82,7 +82,7 @@
     "prettier": "^3.8.3",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
-    "vite": "^7.0.4",
+    "vite": "^8.0.13",
     "vitest": "^4.1.6"
   }
 }
